@@ -12,6 +12,7 @@ from cantonese_asr.io import write_jsonl
 from predict import generation_kwargs, validate_inference_args
 from scripts.evaluate_checkpoints import prediction_command, resolve_best_checkpoint_name
 from scripts.evaluate_manifest_loss import weighted_mean_loss
+from scripts.select_global_candidate import load_candidates
 
 
 def test_offline_inference_uses_canonical_generation_limit() -> None:
@@ -152,3 +153,18 @@ def test_selector_resolves_and_deduplicates_best_model_copy(tmp_path: Path) -> N
     report = json.loads(output.read_text(encoding="utf-8"))
     assert len(report["candidates"]) == 1
     assert report["selected"]["checkpoint"] == "checkpoint-12"
+
+
+def test_global_selector_rejects_non_validation_selection(tmp_path: Path) -> None:
+    invalid = tmp_path / "checkpoint_selection.json"
+    invalid.write_text(
+        json.dumps(
+            {
+                "selection_surface": "ood_panel",
+                "selected": {"eligible": True, "model_dir": "checkpoint-1"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="not validation-only"):
+        load_candidates([invalid])
