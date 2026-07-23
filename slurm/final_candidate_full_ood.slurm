@@ -21,6 +21,10 @@ mkdir -p "$REPORT_DIR"
   --selection outputs/external-round1/ext-r1-external50-balanced/checkpoint_selection.json \
   --selection outputs/external-round1/ext-r1-preadapt-then-official/checkpoint_selection.json \
   --selection outputs/final/final-lr2e-5-linear-b8-ga2/checkpoint_selection.json \
+  --selection outputs/external-round2/ext-r2-external50-e5-linear/checkpoint_selection.json \
+  --selection outputs/external-round2/ext-r2-external73-e3-linear/checkpoint_selection.json \
+  --selection outputs/external-round2/ext-r2-external73-e5-linear/checkpoint_selection.json \
+  --selection outputs/external-round2/ext-r2-external73-e3-cosine/checkpoint_selection.json \
   --output "$SELECTION"
 
 MODEL_DIR=$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected"]["model_dir"])' "$SELECTION")
