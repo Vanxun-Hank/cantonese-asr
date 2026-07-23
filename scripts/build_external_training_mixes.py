@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import random
 import sys
 from collections import Counter
@@ -30,8 +29,18 @@ def parse_args() -> argparse.Namespace:
         "--external-fraction",
         type=float,
         action="append",
-        default=[0.25, 0.5],
+        default=None,
         help="External fraction of final epoch rows; may be repeated.",
+    )
+    parser.add_argument(
+        "--nested-fractions",
+        action="store_true",
+        help="Smaller external fraction is a subset of larger feasible fractions.",
+    )
+    parser.add_argument(
+        "--include-all-external",
+        action="store_true",
+        help="Write all_train.jsonl with every accepted publisher-train row.",
     )
     parser.add_argument(
         "--preadapt-official-multiple",
@@ -82,6 +91,18 @@ def sample_sources(
     return sampled
 
 
+def sample_sources_prefix(
+    sources: list[list[dict[str, Any]]], total: int, seed: int
+) -> list[dict[str, Any]]:
+    counts = balanced_counts(total, [len(source) for source in sources])
+    sampled: list[dict[str, Any]] = []
+    for source_index, (source, count) in enumerate(zip(sources, counts)):
+        ordered = sorted(source, key=lambda row: str(row["id"]))
+        random.Random(seed + 1009 * source_index).shuffle(ordered)
+        sampled.extend(ordered[:count])
+    return sampled
+
+
 def shuffled(rows: list[dict[str, Any]], seed: int) -> list[dict[str, Any]]:
     result = [dict(row) for row in rows]
     random.Random(seed).shuffle(result)
@@ -106,7 +127,7 @@ def fraction_name(value: float) -> str:
 
 def main() -> None:
     args = parse_args()
-    fractions = list(dict.fromkeys(args.external_fraction))
+    fractions = list(dict.fromkeys(args.external_fraction or [0.25, 0.5]))
     if any(not 0 < value < 1 for value in fractions):
         raise SystemExit("--external-fraction values must be between 0 and 1")
     if args.preadapt_official_multiple <= 0:
@@ -132,9 +153,14 @@ def main() -> None:
 
     for offset, fraction in enumerate(fractions, start=1):
         external_count = round(len(official) * fraction / (1.0 - fraction))
-        external = sample_sources(
-            [common_voice, mdcc], external_count, args.seed + offset * 10_000
-        )
+        if args.nested_fractions:
+            external = sample_sources_prefix(
+                [common_voice, mdcc], external_count, args.seed + 50_000
+            )
+        else:
+            external = sample_sources(
+                [common_voice, mdcc], external_count, args.seed + offset * 10_000
+            )
         rows = shuffled(official + external, args.seed + offset)
         name = fraction_name(fraction)
         path = args.output_dir / f"{name}.jsonl"
@@ -143,6 +169,19 @@ def main() -> None:
         summary["requested_external_fraction"] = fraction
         summary["actual_external_fraction"] = len(external) / len(rows)
         manifests[name] = summary
+
+    if args.include_all_external:
+        all_train_rows = shuffled(
+            official + common_voice + mdcc, args.seed + 80_000
+        )
+        all_train_path = args.output_dir / "all_train.jsonl"
+        write_jsonl(all_train_path, all_train_rows)
+        summary = manifest_summary(all_train_path, all_train_rows)
+        summary["requested_external_fraction"] = "all"
+        summary["actual_external_fraction"] = (
+            len(common_voice) + len(mdcc)
+        ) / len(all_train_rows)
+        manifests["all_train"] = summary
 
     preadapt_count = round(len(official) * args.preadapt_official_multiple)
     preadapt_rows = shuffled(
@@ -164,6 +203,8 @@ def main() -> None:
             "external_sources_balanced_by_row_count": True,
             "sampling_without_replacement": True,
             "external_fraction_definition": "external_rows / total_epoch_rows",
+            "nested_external_fractions": args.nested_fractions,
+            "all_external_rows_included": args.include_all_external,
         },
         "input_counts": {
             "official": len(official),
