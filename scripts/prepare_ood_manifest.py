@@ -105,37 +105,58 @@ def load_exclusions(
     return text_keys, audio_hashes, sample_ids, dict(counts)
 
 
-class CommonVoiceArchive:
-    """Read individual Common Voice clips from the original archive safely."""
+def common_voice_targets(
+    root: Path, audio_root: Path, splits: Iterable[str]
+) -> dict[str, Path]:
+    targets: dict[str, Path] = {}
+    for split in splits:
+        with (root / f"{split}.tsv").open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            if not reader.fieldnames or "path" not in reader.fieldnames:
+                raise ValueError(f"Unexpected Common Voice schema: {reader.fieldnames}")
+            for row in reader:
+                filename = str(row.get("path") or "").strip()
+                if not filename:
+                    continue
+                target = audio_root / split / filename
+                previous = targets.get(filename)
+                if previous is not None and previous != target:
+                    raise ValueError(f"Common Voice filename appears in multiple splits: {filename}")
+                targets[filename] = target
+    return targets
 
-    def __init__(self, path: Path) -> None:
-        self.path = path
-        self.archive = tarfile.open(path, "r:gz")
-        self.members: dict[str, tarfile.TarInfo] = {}
-        for member in self.archive.getmembers():
-            marker = "/clips/"
-            if member.isfile() and marker in member.name:
+
+def materialize_common_voice_archive(
+    archive_path: Path, targets: dict[str, Path]
+) -> dict[str, int]:
+    """Scan the gzip tar exactly once; random access is prohibitively expensive."""
+    missing = {filename for filename, target in targets.items() if not target.is_file()}
+    reused = len(targets) - len(missing)
+    extracted = 0
+    if missing:
+        with tarfile.open(archive_path, "r|gz") as archive:
+            for member in archive:
+                marker = "/clips/"
+                if not member.isfile() or marker not in member.name:
+                    continue
                 filename = member.name.rsplit(marker, 1)[1]
-                if "/" not in filename:
-                    self.members[filename] = member
-
-    def read(self, filename: str) -> bytes:
-        member = self.members.get(filename)
-        if member is None:
-            raise FileNotFoundError(f"Clip not found in {self.path}: {filename}")
-        handle = self.archive.extractfile(member)
-        if handle is None:
-            raise OSError(f"Unable to extract {member.name}")
-        return handle.read()
-
-    def close(self) -> None:
-        self.archive.close()
-
-    def __enter__(self) -> "CommonVoiceArchive":
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        self.close()
+                if filename not in missing or "/" in filename:
+                    continue
+                handle = archive.extractfile(member)
+                if handle is None:
+                    raise OSError(f"Unable to extract {member.name}")
+                data = handle.read()
+                materialize_audio(targets[filename], data, sha256_bytes(data))
+                missing.remove(filename)
+                extracted += 1
+                if not missing:
+                    break
+    if missing:
+        examples = sorted(missing)[:10]
+        raise FileNotFoundError(
+            f"{len(missing)} required Common Voice clips missing from {archive_path}: {examples}"
+        )
+    return {"targets": len(targets), "reused": reused, "extracted": extracted}
 
 
 def reject_reason(
@@ -163,7 +184,6 @@ def reject_reason(
 def prepare_common_voice_split(
     split: str,
     root: Path,
-    archive: CommonVoiceArchive,
     audio_root: Path,
     project_root: Path,
     durations: dict[str, float],
@@ -219,7 +239,7 @@ def prepare_common_voice_split(
                 seen_ids.add(sample_id)
                 continue
             try:
-                data = target.read_bytes() if target.is_file() else archive.read(filename)
+                data = target.read_bytes()
                 decoded_duration, sample_rate, channels = audio_info_bytes(data)
                 if not valid_duration(decoded_duration, max_duration):
                     raise ValueError(f"decoded duration {decoded_duration}")
@@ -389,24 +409,27 @@ def main() -> None:
     accepted: list[dict[str, Any]] = []
     quarantine: list[dict[str, Any]] = []
     raw_counts: dict[str, int] = {}
-
-    with CommonVoiceArchive(args.common_voice_archive) as archive:
-        for split in ("dev", "test"):
-            rows, rejected, raw_count = prepare_common_voice_split(
-                split,
-                args.common_voice_root,
-                archive,
-                args.common_voice_audio_root,
-                args.project_root,
-                durations,
-                seen_text,
-                seen_audio,
-                seen_ids,
-                args.max_duration,
-            )
-            accepted.extend(rows)
-            quarantine.extend(rejected)
-            raw_counts[f"common_voice_26_zh_HK:{split}"] = raw_count
+    cv_targets = common_voice_targets(
+        args.common_voice_root, args.common_voice_audio_root, ("dev", "test")
+    )
+    cv_materialization = materialize_common_voice_archive(
+        args.common_voice_archive, cv_targets
+    )
+    for split in ("dev", "test"):
+        rows, rejected, raw_count = prepare_common_voice_split(
+            split,
+            args.common_voice_root,
+            args.common_voice_audio_root,
+            args.project_root,
+            durations,
+            seen_text,
+            seen_audio,
+            seen_ids,
+            args.max_duration,
+        )
+        accepted.extend(rows)
+        quarantine.extend(rejected)
+        raw_counts[f"common_voice_26_zh_HK:{split}"] = raw_count
     for split in ("validation", "test"):
         rows, rejected, raw_count = prepare_mdcc_split(
             split,
@@ -464,6 +487,7 @@ def main() -> None:
         "inputs": {
             "common_voice_root": str(args.common_voice_root.resolve()),
             "common_voice_archive": str(args.common_voice_archive.resolve()),
+            "common_voice_materialization": cv_materialization,
             "mdcc_parquet_root": str(args.mdcc_parquet_root.resolve()),
             "excluded_manifests": [str(path.resolve()) for path in args.excluded_manifest],
         },

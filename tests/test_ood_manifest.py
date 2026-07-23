@@ -4,7 +4,11 @@ import json
 from pathlib import Path
 
 from cantonese_asr.io import write_jsonl
-from scripts.prepare_ood_manifest import deterministic_panel, load_exclusions
+from scripts.prepare_ood_manifest import (
+    common_voice_targets,
+    deterministic_panel,
+    load_exclusions,
+)
 
 
 def make_ood_rows() -> list[dict[str, str]]:
@@ -66,4 +70,18 @@ def test_exclusion_boundary_uses_text_audio_hash_and_id(tmp_path: Path) -> None:
         "unique_text_keys": 1,
         "unique_audio_sha256": 1,
         "unique_ids": 1,
+    }
+
+
+def test_common_voice_targets_keep_publisher_splits_separate(tmp_path: Path) -> None:
+    root = tmp_path / "cv"
+    root.mkdir()
+    for split, filename in (("dev", "dev.mp3"), ("test", "test.mp3")):
+        (root / f"{split}.tsv").write_text(
+            f"path\tsentence\n{filename}\t你好\n", encoding="utf-8"
+        )
+    targets = common_voice_targets(root, tmp_path / "audio", ("dev", "test"))
+    assert targets == {
+        "dev.mp3": tmp_path / "audio" / "dev" / "dev.mp3",
+        "test.mp3": tmp_path / "audio" / "test" / "test.mp3",
     }
