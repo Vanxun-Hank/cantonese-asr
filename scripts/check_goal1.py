@@ -43,6 +43,8 @@ def parse_args() -> argparse.Namespace:
         default=Path("artifacts/reports/goal1_acceptance.json"),
     )
     parser.add_argument("--required-improvement", type=float, default=0.02)
+    parser.add_argument("--max-cer", type=float, default=0.1163)
+    parser.add_argument("--min-sentence-accuracy", type=float, default=0.8219)
     return parser.parse_args()
 
 
@@ -123,6 +125,33 @@ def main() -> None:
         "Public test/template samples are absent from train, validation and train-probe",
     )
 
+    ood_report_path = args.manifests / "ood" / "v1" / "data_report.json"
+    ood_report = load_json(ood_report_path) if ood_report_path.is_file() else None
+    ood_checks = ood_report.get("leakage_checks", {}) if ood_report else {}
+    ood_groups = ood_report.get("panel", {}).get("groups", {}) if ood_report else {}
+    ood_panel_rows = (
+        ood_report.get("panel", {}).get("total", {}).get("rows", 0)
+        if ood_report
+        else 0
+    )
+    ood_ok = bool(
+        ood_report
+        and ood_panel_rows > 0
+        and ood_panel_rows <= 2000
+        and len(ood_groups) == 4
+        and not any(ood_checks.values())
+    )
+    checks["ood_isolation"] = result(
+        ood_ok,
+        {
+            "report": str(ood_report_path),
+            "panel_rows": ood_panel_rows,
+            "groups": sorted(ood_groups),
+            "leakage_checks": ood_checks,
+        },
+        "Fixed OOD panel covers four held-out publisher splits with zero leakage",
+    )
+
     baseline_path = args.outputs / "zero-shot" / "validation" / "metrics.json"
     baseline = load_json(baseline_path) if baseline_path.is_file() else None
     checks["zero_shot"] = result(
@@ -184,6 +213,35 @@ def main() -> None:
         "Best validation accuracy improves >=2 points and CER does not regress",
     )
 
+    all_selection_paths = sorted(args.outputs.glob("**/checkpoint_selection.json"))
+    selection_paths = [
+        path
+        for path in all_selection_paths
+        if load_json(path).get("selection_surface") == "internal_validation_only"
+    ]
+    selection_evidence = []
+    selection_ok = len(selection_paths) >= 5
+    for path in selection_paths:
+        selection = load_json(path)
+        selected = selection.get("selected")
+        valid = bool(
+            selected
+            and selected.get("eligible") is True
+            and float(selected["cer"]) <= args.max_cer
+            and float(selected["sentence_accuracy_tol2"])
+            >= args.min_sentence_accuracy
+            and selected.get("validation_loss") is not None
+        )
+        selection_ok = selection_ok and valid
+        selection_evidence.append(
+            {"path": str(path), "valid": valid, "selected": selected}
+        )
+    checks["guarded_checkpoint_selection"] = result(
+        selection_ok,
+        selection_evidence,
+        "Checkpoint selection enforces accuracy/CER guardrails and true validation loss",
+    )
+
     required_reports = [
         "scoreboard.csv",
         "scoreboard.json",
@@ -193,6 +251,10 @@ def main() -> None:
         "trial_comparison.png",
         "data_distribution.png",
         "scene_comparison.png",
+        "diagnostic_scoreboard.csv",
+        "diagnostic_scoreboard.json",
+        "ood_data_distribution.png",
+        "ood_comparison.png",
     ]
     missing_reports = [
         name
@@ -240,6 +302,19 @@ def main() -> None:
             "error_reports": len(errors),
         },
         "Per-checkpoint scene metrics, character confusions and error examples exist",
+    )
+
+    ood_metrics = list(args.outputs.glob("**/diagnostics/*/ood_panel/metrics.json"))
+    ood_losses = list(
+        args.outputs.glob("**/diagnostics/*/ood_panel/teacher_forced_loss.json")
+    )
+    checks["ood_checkpoint_diagnostics"] = result(
+        bool(ood_metrics and len(ood_metrics) == len(ood_losses)),
+        {
+            "generation_metrics": len(ood_metrics),
+            "teacher_forced_losses": len(ood_losses),
+        },
+        "Each generated OOD checkpoint report has a teacher-forced loss report",
     )
 
     passed = all(check["passed"] for check in checks.values())
