@@ -113,6 +113,7 @@ def test_builds_nested_mdcc_coverage_and_all_train_mix(tmp_path: Path) -> None:
     assert not (output / "external25.jsonl").exists()
     assert [len(mix50), len(mix60), len(mix70), len(all_train)] == [20, 25, 33, 43]
     assert report["sampling_policy"]["nested_external_fractions"] is True
+    assert report["manifests"]["all_train"]["unique_ids"] == len(all_train)
     assert report["manifests"]["external50"]["sources"] == {
         "common_voice_26_zh_HK": 3, "mdcc": 7, "official": 10
     }

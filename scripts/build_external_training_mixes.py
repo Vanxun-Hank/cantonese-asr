@@ -115,6 +115,7 @@ def manifest_summary(path: Path, rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "path": str(path),
         "rows": len(rows),
+        "unique_ids": len({str(row["id"]) for row in rows}),
         "hours": round(hours, 4),
         "sources": dict(sorted(sources.items())),
         "sha256": sha256_file(path),
