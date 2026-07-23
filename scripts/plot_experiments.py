@@ -218,12 +218,24 @@ def write_scoreboard(report_dir: Path, scoreboard: list[dict[str, Any]]) -> None
 def collect_diagnostic_scoreboard(outputs_root: Path) -> list[dict[str, Any]]:
     """Collect independent generation and teacher-forced diagnostics."""
     records = []
+    indexes: dict[Path, dict[Path, dict[str, Any]]] = {}
+    for index_path in outputs_root.glob("**/diagnostics/index.json"):
+        run_dir = index_path.parents[1].resolve()
+        indexes[run_dir] = {
+            Path(str(row["report_dir"])).resolve(): row
+            for row in json.loads(index_path.read_text(encoding="utf-8"))
+        }
     for metrics_path in sorted(
         outputs_root.glob("**/diagnostics/*/*/metrics.json")
     ):
         split_dir = metrics_path.parent
         checkpoint_dir = split_dir.parent
         run_dir = checkpoint_dir.parents[1]
+        indexed = indexes.get(run_dir.resolve())
+        index_row = indexed.get(split_dir.resolve()) if indexed is not None else None
+        if indexed is not None and index_row is None:
+            # Ignore stale diagnostic folders from a previous decoding configuration.
+            continue
         run_config_path = run_dir / "run_config.json"
         trial = run_dir.name
         if run_config_path.is_file():
@@ -252,6 +264,9 @@ def collect_diagnostic_scoreboard(outputs_root: Path) -> list[dict[str, Any]]:
                 "teacher_forced_loss": finite(loss.get("loss")),
                 "target_tokens": loss.get("target_tokens"),
                 "manifest_sha256": loss.get("manifest_sha256"),
+                "generation_max_length": (
+                    index_row.get("generation_max_length") if index_row else None
+                ),
                 "metrics_path": str(metrics_path),
             }
         )
