@@ -81,6 +81,10 @@ def test_plot_script_builds_reusable_report(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
+    (ood_dir / "metrics_symmetric_t2s.json").write_text(
+        json.dumps({"sentence_accuracy_tol2": 0.75, "cer": 0.12}),
+        encoding="utf-8",
+    )
     report_dir = tmp_path / "report"
     subprocess.run(
         [
@@ -107,7 +111,9 @@ def test_plot_script_builds_reusable_report(tmp_path: Path) -> None:
         (report_dir / "diagnostic_scoreboard.json").read_text()
     )
     assert any(
-        row["split"] == "ood_panel" and row["teacher_forced_loss"] == 1.25
+        row["split"] == "ood_panel"
+        and row["teacher_forced_loss"] == 1.25
+        and row["symmetric_t2s_sentence_accuracy_tol2"] == 0.75
         for row in diagnostic_scoreboard
     )
     scoreboard = json.loads((report_dir / "scoreboard.json").read_text())

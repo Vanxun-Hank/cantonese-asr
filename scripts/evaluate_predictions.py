@@ -17,7 +17,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from cantonese_asr.io import read_jsonl
-from cantonese_asr.metrics import build_error_analysis, compute_official_metrics
+from cantonese_asr.metrics import (
+    build_error_analysis,
+    compute_official_metrics,
+    to_simplified,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,6 +33,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metrics-jsonl", type=Path)
     parser.add_argument("--trial")
     parser.add_argument("--split", choices=["validation", "train_probe", "template_pre"])
+    parser.add_argument(
+        "--write-symmetric-t2s",
+        action="store_true",
+        help="Also normalize references to simplified Chinese for cross-corpus OOD diagnosis",
+    )
     return parser.parse_args()
 
 
@@ -128,6 +137,16 @@ def main() -> None:
     (args.report_dir / "metrics.json").write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+    symmetric_metrics = None
+    if args.write_symmetric_t2s:
+        symmetric_metrics = compute_official_metrics(
+            [to_simplified(row["reference"]) for row in analysis_rows],
+            [row["prediction"] for row in analysis_rows],
+        )
+        (args.report_dir / "metrics_symmetric_t2s.json").write_text(
+            json.dumps(symmetric_metrics, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     (args.report_dir / "error_examples.json").write_text(
         json.dumps(diagnostics["error_examples"], ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -170,7 +189,13 @@ def main() -> None:
         }
         with args.metrics_jsonl.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(event, ensure_ascii=False) + "\n")
-    print(json.dumps(metrics, ensure_ascii=False, indent=2))
+    rendered: dict[str, Any] = metrics
+    if symmetric_metrics is not None:
+        rendered = {
+            "official_asymmetric": metrics,
+            "symmetric_t2s": symmetric_metrics,
+        }
+    print(json.dumps(rendered, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 
 from cantonese_asr.metrics import (
@@ -45,3 +50,45 @@ def test_error_analysis_has_scenes_and_confusions() -> None:
     assert report["scene_metrics"]["1问候"]["num_samples"] == 1
     assert report["substitutions"][0]["reference"] == "好"
 
+
+def test_ood_symmetric_t2s_is_separate_from_official_metric(tmp_path: Path) -> None:
+    predictions = tmp_path / "predictions.jsonl"
+    references = tmp_path / "references.jsonl"
+    report_dir = tmp_path / "report"
+    predictions.write_text(
+        json.dumps({"audio_path": "a.wav", "pred_text": "发展"}, ensure_ascii=False)
+        + "\n",
+        encoding="utf-8",
+    )
+    references.write_text(
+        json.dumps({"audio_path": "a.wav", "text": "發展"}, ensure_ascii=False)
+        + "\n",
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/evaluate_predictions.py",
+            "--pred-jsonl",
+            str(predictions),
+            "--reference",
+            str(references),
+            "--report-dir",
+            str(report_dir),
+            "--write-symmetric-t2s",
+        ],
+        check=True,
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+    )
+
+    official = json.loads((report_dir / "metrics.json").read_text(encoding="utf-8"))
+    symmetric = json.loads(
+        (report_dir / "metrics_symmetric_t2s.json").read_text(encoding="utf-8")
+    )
+    assert official["sentence_accuracy_exact"] == 0.0
+    assert official["cer"] == 0.5
+    assert symmetric["sentence_accuracy_exact"] == 1.0
+    assert symmetric["cer"] == 0.0

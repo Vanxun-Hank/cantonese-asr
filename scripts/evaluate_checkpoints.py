@@ -132,6 +132,7 @@ def main() -> None:
                         "--report-dir",
                         str(report_dir),
                     ]
+                    + (["--write-symmetric-t2s"] if split == "ood_panel" else [])
                 )
             if not args.skip_existing or not loss_path.is_file():
                 run(

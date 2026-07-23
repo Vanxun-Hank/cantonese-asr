@@ -39,7 +39,8 @@ RUN_DIR=$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["sel
   --pred-jsonl "$PREDICTIONS" \
   --reference artifacts/manifests/ood/v1/ood_all.jsonl \
   --reference-field text \
-  --report-dir "$REPORT_DIR"
+  --report-dir "$REPORT_DIR" \
+  --write-symmetric-t2s
 
 "$PYTHON" scripts/evaluate_manifest_loss.py \
   --model-dir "$MODEL_DIR" \

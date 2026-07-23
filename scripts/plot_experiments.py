@@ -242,6 +242,12 @@ def collect_diagnostic_scoreboard(outputs_root: Path) -> list[dict[str, Any]]:
             config = json.loads(run_config_path.read_text(encoding="utf-8"))
             trial = str(config.get("arguments", {}).get("trial_name") or trial)
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        symmetric_path = split_dir / "metrics_symmetric_t2s.json"
+        symmetric = (
+            json.loads(symmetric_path.read_text(encoding="utf-8"))
+            if symmetric_path.is_file()
+            else {}
+        )
         loss_path = split_dir / "teacher_forced_loss.json"
         loss = (
             json.loads(loss_path.read_text(encoding="utf-8"))
@@ -261,6 +267,10 @@ def collect_diagnostic_scoreboard(outputs_root: Path) -> list[dict[str, Any]]:
                     metrics.get("sentence_accuracy_exact")
                 ),
                 "cer": finite(metrics.get("cer")),
+                "symmetric_t2s_sentence_accuracy_tol2": finite(
+                    symmetric.get("sentence_accuracy_tol2")
+                ),
+                "symmetric_t2s_cer": finite(symmetric.get("cer")),
                 "teacher_forced_loss": finite(loss.get("loss")),
                 "target_tokens": loss.get("target_tokens"),
                 "manifest_sha256": loss.get("manifest_sha256"),
@@ -302,14 +312,19 @@ def ood_comparison(report_dir: Path, records: list[dict[str, Any]]) -> None:
     labels = [f"{row['trial']}\n{row['checkpoint']}" for row in rows]
     positions = list(range(len(rows)))
     figure, axes = plt.subplots(
-        1, 3, figsize=(max(14, len(rows) * 1.8), 5), constrained_layout=True
+        2, 2, figsize=(max(14, len(rows) * 1.8), 10), constrained_layout=True
     )
     series = (
-        ("sentence_accuracy_tol2", "OOD sentence accuracy", "#2563eb"),
-        ("cer", "OOD CER", "#d97706"),
+        ("sentence_accuracy_tol2", "OOD official-asymmetric accuracy", "#64748b"),
+        (
+            "symmetric_t2s_sentence_accuracy_tol2",
+            "OOD symmetric-t2s accuracy",
+            "#2563eb",
+        ),
+        ("symmetric_t2s_cer", "OOD symmetric-t2s CER", "#d97706"),
         ("teacher_forced_loss", "OOD teacher-forced loss", "#0f766e"),
     )
-    for axis, (key, title, color) in zip(axes, series):
+    for axis, (key, title, color) in zip(axes.flat, series):
         values_by_row = [row[key] if row[key] is not None else float("nan") for row in rows]
         axis.bar(positions, values_by_row, color=color)
         axis.set_xticks(positions, labels, rotation=35, ha="right")
