@@ -24,7 +24,31 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--processor_dir", type=Path)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_beams", type=int, default=1)
+    parser.add_argument(
+        "--generation-max-length",
+        type=int,
+        default=225,
+        help="Maximum total number of generated tokens (must match training evaluation)",
+    )
     return parser.parse_args()
+
+
+def validate_inference_args(args: argparse.Namespace) -> None:
+    """Reject invalid decoding settings before loading any model assets."""
+    if args.batch_size < 1 or args.num_beams < 1 or args.generation_max_length < 1:
+        raise SystemExit(
+            "--batch_size, --num_beams and --generation-max-length must be positive"
+        )
+
+
+def generation_kwargs(args: argparse.Namespace) -> dict[str, Any]:
+    """Return the single canonical decoding configuration used by offline inference."""
+    return {
+        "language": "zh",
+        "task": "transcribe",
+        "num_beams": args.num_beams,
+        "max_length": args.generation_max_length,
+    }
 
 
 def read_test_rows(path: Path) -> list[dict[str, Any]]:
@@ -77,8 +101,7 @@ def resolve_audio(audio_dir: Path, listed_path: str) -> Path:
 
 def main() -> None:
     args = parse_args()
-    if args.batch_size < 1 or args.num_beams < 1:
-        raise SystemExit("--batch_size and --num_beams must be positive")
+    validate_inference_args(args)
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
     os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
@@ -127,9 +150,7 @@ def main() -> None:
                 predicted_ids = model.generate(
                     input_features,
                     attention_mask=attention_mask,
-                    language="zh",
-                    task="transcribe",
-                    num_beams=args.num_beams,
+                    **generation_kwargs(args),
                 )
             texts = processor.batch_decode(predicted_ids, skip_special_tokens=True)
             for listed_path, text in zip(batch_paths, texts):

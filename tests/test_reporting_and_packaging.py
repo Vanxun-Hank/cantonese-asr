@@ -51,6 +51,36 @@ def test_plot_script_builds_reusable_report(tmp_path: Path) -> None:
         writer.writerow(
             {"scene": "1问候", "num_samples": 2, "sentence_accuracy_tol2": 0.5}
         )
+    (scene_dir / "metrics.json").write_text(
+        json.dumps(
+            {
+                "num_samples": 2,
+                "sentence_accuracy_tol2": 0.5,
+                "sentence_accuracy_exact": 0.4,
+                "cer": 0.2,
+            }
+        ),
+        encoding="utf-8",
+    )
+    ood_dir = outputs / "diagnostics" / "best_model" / "ood_panel"
+    ood_dir.mkdir(parents=True)
+    (ood_dir / "metrics.json").write_text(
+        json.dumps(
+            {
+                "num_samples": 4,
+                "sentence_accuracy_tol2": 0.25,
+                "sentence_accuracy_exact": 0.1,
+                "cer": 0.4,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (ood_dir / "teacher_forced_loss.json").write_text(
+        json.dumps(
+            {"loss": 1.25, "target_tokens": 40, "manifest_sha256": "a" * 64}
+        ),
+        encoding="utf-8",
+    )
     report_dir = tmp_path / "report"
     subprocess.run(
         [
@@ -71,6 +101,15 @@ def test_plot_script_builds_reusable_report(tmp_path: Path) -> None:
     assert (report_dir / "report.html").is_file()
     assert (report_dir / "training_curves.png").stat().st_size > 0
     assert (report_dir / "scene_comparison.png").stat().st_size > 0
+    assert (report_dir / "ood_comparison.png").stat().st_size > 0
+    assert (report_dir / "diagnostic_scoreboard.csv").stat().st_size > 0
+    diagnostic_scoreboard = json.loads(
+        (report_dir / "diagnostic_scoreboard.json").read_text()
+    )
+    assert any(
+        row["split"] == "ood_panel" and row["teacher_forced_loss"] == 1.25
+        for row in diagnostic_scoreboard
+    )
     scoreboard = json.loads((report_dir / "scoreboard.json").read_text())
     assert scoreboard[0]["sentence_accuracy_tol2"] == 0.7
     assert scoreboard[0]["train_probe_accuracy"] == 0.85

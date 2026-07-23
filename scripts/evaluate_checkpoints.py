@@ -19,7 +19,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--audio-dir", type=Path, required=True)
     parser.add_argument("--validation-manifest", type=Path, required=True)
     parser.add_argument("--train-probe-manifest", type=Path, required=True)
+    parser.add_argument("--ood-panel-manifest", type=Path)
     parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--generation-max-length", type=int, default=225)
+    parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
     return parser.parse_args()
 
@@ -30,8 +34,47 @@ def checkpoint_step(path: Path) -> int:
     return int(path.name.rsplit("-", 1)[-1])
 
 
+def resolve_best_checkpoint_name(run_dir: Path) -> str | None:
+    state_path = run_dir / "trainer_state.json"
+    if not state_path.is_file():
+        return None
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    value = state.get("best_model_checkpoint")
+    return Path(str(value)).name if value else None
+
+
 def run(command: list[str]) -> None:
     subprocess.run(command, cwd=PROJECT_ROOT, check=True)
+
+
+def prediction_command(
+    python: Path,
+    checkpoint: Path,
+    processor_dir: Path,
+    audio_dir: Path,
+    manifest: Path,
+    output: Path,
+    batch_size: int,
+    generation_max_length: int,
+) -> list[str]:
+    return [
+        str(python),
+        "predict.py",
+        "--model_dir",
+        str(checkpoint),
+        "--processor_dir",
+        str(processor_dir),
+        "--audio_dir",
+        str(audio_dir),
+        "--test_list",
+        str(manifest),
+        "--output_jsonl",
+        str(output),
+        "--batch_size",
+        str(batch_size),
+        "--generation-max-length",
+        str(generation_max_length),
+    ]
 
 
 def main() -> None:
@@ -41,7 +84,9 @@ def main() -> None:
         key=checkpoint_step,
     )
     best_model = args.run_dir / "best_model"
-    if best_model.is_dir():
+    existing_names = {path.name for path in checkpoints}
+    resolved_best = resolve_best_checkpoint_name(args.run_dir)
+    if best_model.is_dir() and resolved_best not in existing_names:
         checkpoints.append(best_model)
     if not checkpoints:
         raise SystemExit(f"No checkpoint-* or best_model below {args.run_dir}")
@@ -49,50 +94,73 @@ def main() -> None:
     generated = []
     for checkpoint in checkpoints:
         checkpoint_name = checkpoint.name
-        for split, manifest in (
+        splits = [
             ("validation", args.validation_manifest),
             ("train_probe", args.train_probe_manifest),
-        ):
+        ]
+        if args.ood_panel_manifest:
+            splits.append(("ood_panel", args.ood_panel_manifest))
+        for split, manifest in splits:
             report_dir = args.run_dir / "diagnostics" / checkpoint_name / split
             prediction_path = report_dir / "predictions.jsonl"
+            loss_path = report_dir / "teacher_forced_loss.json"
             report_dir.mkdir(parents=True, exist_ok=True)
-            run(
-                [
-                    str(args.python),
-                    "predict.py",
-                    "--model_dir",
-                    str(checkpoint),
-                    "--processor_dir",
-                    str(args.run_dir),
-                    "--audio_dir",
-                    str(args.audio_dir),
-                    "--test_list",
-                    str(manifest),
-                    "--output_jsonl",
-                    str(prediction_path),
-                    "--batch_size",
-                    str(args.batch_size),
-                ]
-            )
-            run(
-                [
-                    str(args.python),
-                    "scripts/evaluate_predictions.py",
-                    "--pred-jsonl",
-                    str(prediction_path),
-                    "--reference",
-                    str(manifest),
-                    "--reference-field",
-                    "text",
-                    "--report-dir",
-                    str(report_dir),
-                ]
-            )
+            metrics_path = report_dir / "metrics.json"
+            if not args.skip_existing or not (prediction_path.is_file() and metrics_path.is_file()):
+                run(
+                    prediction_command(
+                        args.python,
+                        checkpoint,
+                        args.run_dir,
+                        args.audio_dir,
+                        manifest,
+                        prediction_path,
+                        args.batch_size,
+                        args.generation_max_length,
+                    )
+                )
+                run(
+                    [
+                        str(args.python),
+                        "scripts/evaluate_predictions.py",
+                        "--pred-jsonl",
+                        str(prediction_path),
+                        "--reference",
+                        str(manifest),
+                        "--reference-field",
+                        "text",
+                        "--report-dir",
+                        str(report_dir),
+                    ]
+                )
+            if not args.skip_existing or not loss_path.is_file():
+                run(
+                    [
+                        str(args.python),
+                        "scripts/evaluate_manifest_loss.py",
+                        "--model-dir",
+                        str(checkpoint),
+                        "--processor-dir",
+                        str(args.run_dir),
+                        "--manifest",
+                        str(manifest),
+                        "--project-root",
+                        str(PROJECT_ROOT),
+                        "--output",
+                        str(loss_path),
+                        "--batch-size",
+                        str(args.batch_size),
+                        "--num-workers",
+                        str(args.num_workers),
+                    ]
+                )
             generated.append(
                 {
                     "checkpoint": checkpoint_name,
                     "split": split,
                     "report_dir": str(report_dir),
+                    "generation_max_length": args.generation_max_length,
+                    "teacher_forced_loss": str(loss_path),
                 }
             )
     (args.run_dir / "diagnostics" / "index.json").write_text(
@@ -102,4 +170,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

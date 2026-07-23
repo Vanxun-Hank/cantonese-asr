@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=canto-report
+#SBATCH --job-name=canto-reeval-report
 #SBATCH --partition=gpu
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G

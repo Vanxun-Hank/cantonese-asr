@@ -27,7 +27,8 @@ MODEL_DIR=$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["s
   --audio_dir artifacts/data/train_raw/4856-10393 \
   --test_list artifacts/datasets/official/template_pre.jsonl \
   --output_jsonl "$RUN_DIR/public_review/predictions.jsonl" \
-  --batch_size 8
+  --batch_size 8 \
+  --generation-max-length 225
 "$PYTHON" scripts/evaluate_predictions.py \
   --pred-jsonl "$RUN_DIR/public_review/predictions.jsonl" \
   --reference artifacts/datasets/official/template_pre.jsonl \
@@ -44,7 +45,8 @@ MODEL_DIR=$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["s
   --audio_dir artifacts/data/test_audio \
   --test_list artifacts/datasets/official/template.jsonl \
   --output_jsonl "$RUN_DIR/formal_protocol/predictions.jsonl" \
-  --batch_size 8
+  --batch_size 8 \
+  --generation-max-length 225
 "$PYTHON" scripts/validate_prediction_order.py \
   --test-list artifacts/datasets/official/template.jsonl \
   --predictions "$RUN_DIR/formal_protocol/predictions.jsonl" \
@@ -65,6 +67,7 @@ MODEL_DIR=$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["s
 "$PYTHON" scripts/plot_experiments.py \
   --outputs-root outputs \
   --data-report artifacts/manifests/data_report.json \
+  --ood-data-report artifacts/manifests/ood/v1/data_report.json \
   --report-dir artifacts/reports/experiments/all
 "$PYTHON" scripts/check_goal1.py \
   --submission-zip "$SUBMISSION_ZIP" \

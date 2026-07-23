@@ -7,6 +7,7 @@ REMOTE_DIR=${REMOTE_DIR:-/home/bolin/cantonese-asr}
 
 ssh "$REMOTE_HOST" "mkdir -p '$REMOTE_DIR/logs' '$REMOTE_DIR/outputs' '$REMOTE_DIR/artifacts/reports'"
 rsync -av \
+  --exclude '.git' \
   --exclude '__pycache__' \
   --exclude '*.pyc' \
   --exclude '.pytest_cache' \

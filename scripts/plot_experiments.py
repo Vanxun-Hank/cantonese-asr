@@ -48,6 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--outputs-root", type=Path, default=Path("outputs"))
     parser.add_argument("--data-report", type=Path)
+    parser.add_argument("--ood-data-report", type=Path)
     parser.add_argument("--report-dir", type=Path, required=True)
     return parser.parse_args()
 
@@ -212,6 +213,118 @@ def write_scoreboard(report_dir: Path, scoreboard: list[dict[str, Any]]) -> None
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(scoreboard)
+
+
+def collect_diagnostic_scoreboard(outputs_root: Path) -> list[dict[str, Any]]:
+    """Collect independent generation and teacher-forced diagnostics."""
+    records = []
+    for metrics_path in sorted(
+        outputs_root.glob("**/diagnostics/*/*/metrics.json")
+    ):
+        split_dir = metrics_path.parent
+        checkpoint_dir = split_dir.parent
+        run_dir = checkpoint_dir.parents[1]
+        run_config_path = run_dir / "run_config.json"
+        trial = run_dir.name
+        if run_config_path.is_file():
+            config = json.loads(run_config_path.read_text(encoding="utf-8"))
+            trial = str(config.get("arguments", {}).get("trial_name") or trial)
+        metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        loss_path = split_dir / "teacher_forced_loss.json"
+        loss = (
+            json.loads(loss_path.read_text(encoding="utf-8"))
+            if loss_path.is_file()
+            else {}
+        )
+        records.append(
+            {
+                "trial": trial,
+                "checkpoint": checkpoint_dir.name,
+                "split": split_dir.name,
+                "num_samples": metrics.get("num_samples"),
+                "sentence_accuracy_tol2": finite(
+                    metrics.get("sentence_accuracy_tol2")
+                ),
+                "sentence_accuracy_exact": finite(
+                    metrics.get("sentence_accuracy_exact")
+                ),
+                "cer": finite(metrics.get("cer")),
+                "teacher_forced_loss": finite(loss.get("loss")),
+                "target_tokens": loss.get("target_tokens"),
+                "manifest_sha256": loss.get("manifest_sha256"),
+                "metrics_path": str(metrics_path),
+            }
+        )
+    return records
+
+
+def write_diagnostic_scoreboard(
+    report_dir: Path, records: list[dict[str, Any]]
+) -> None:
+    (report_dir / "diagnostic_scoreboard.json").write_text(
+        json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    fieldnames = list(records[0]) if records else [
+        "trial",
+        "checkpoint",
+        "split",
+        "sentence_accuracy_tol2",
+        "cer",
+        "teacher_forced_loss",
+    ]
+    with (report_dir / "diagnostic_scoreboard.csv").open(
+        "w", encoding="utf-8-sig", newline=""
+    ) as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(records)
+
+
+def ood_comparison(report_dir: Path, records: list[dict[str, Any]]) -> None:
+    rows = [row for row in records if row["split"] == "ood_panel"]
+    if not rows:
+        return
+    labels = [f"{row['trial']}\n{row['checkpoint']}" for row in rows]
+    positions = list(range(len(rows)))
+    figure, axes = plt.subplots(
+        1, 3, figsize=(max(14, len(rows) * 1.8), 5), constrained_layout=True
+    )
+    series = (
+        ("sentence_accuracy_tol2", "OOD sentence accuracy", "#2563eb"),
+        ("cer", "OOD CER", "#d97706"),
+        ("teacher_forced_loss", "OOD teacher-forced loss", "#0f766e"),
+    )
+    for axis, (key, title, color) in zip(axes, series):
+        values_by_row = [row[key] if row[key] is not None else float("nan") for row in rows]
+        axis.bar(positions, values_by_row, color=color)
+        axis.set_xticks(positions, labels, rotation=35, ha="right")
+        axis.set_title(title)
+        axis.grid(axis="y", alpha=0.25)
+    figure.savefig(report_dir / "ood_comparison.png", dpi=170)
+    plt.close(figure)
+
+
+def ood_data_distribution(report_dir: Path, report_path: Path | None) -> None:
+    if not report_path or not report_path.is_file():
+        return
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    groups = report.get("accepted", {}).get("groups", {})
+    if not groups:
+        return
+    labels = list(groups)
+    rows = [groups[label].get("rows", 0) for label in labels]
+    hours = [groups[label].get("hours", 0) for label in labels]
+    positions = list(range(len(labels)))
+    figure, axes = plt.subplots(1, 2, figsize=(14, 5), constrained_layout=True)
+    axes[0].bar(positions, rows, color="#2563eb")
+    axes[0].set_title("Clean full OOD rows by publisher split")
+    axes[1].bar(positions, hours, color="#0f766e")
+    axes[1].set_title("Clean full OOD hours by publisher split")
+    for axis in axes:
+        axis.set_xticks(positions, labels, rotation=30, ha="right")
+        axis.grid(axis="y", alpha=0.25)
+    figure.savefig(report_dir / "ood_data_distribution.png", dpi=170)
+    plt.close(figure)
 
 
 def training_curves(report_dir: Path, records: list[dict[str, Any]]) -> None:
@@ -411,7 +524,30 @@ def scene_comparison(report_dir: Path, outputs_root: Path) -> None:
     plt.close(figure)
 
 
-def write_html(report_dir: Path, scoreboard: list[dict[str, Any]]) -> None:
+def html_table(rows_data: list[dict[str, Any]]) -> str:
+    headers = list(rows_data[0]) if rows_data else []
+    rows = "".join(
+        "<tr>"
+        + "".join(f"<td>{html.escape(str(row.get(key, '')))}</td>" for key in headers)
+        + "</tr>"
+        for row in rows_data
+    )
+    return (
+        "<table><thead><tr>"
+        + "".join(f"<th>{html.escape(key)}</th>" for key in headers)
+        + "</tr></thead><tbody>"
+        + rows
+        + "</tbody></table>"
+        if headers
+        else "<p>No completed records yet.</p>"
+    )
+
+
+def write_html(
+    report_dir: Path,
+    scoreboard: list[dict[str, Any]],
+    diagnostics: list[dict[str, Any]],
+) -> None:
     headers = list(scoreboard[0]) if scoreboard else []
     rows = "".join(
         "<tr>"
@@ -419,15 +555,8 @@ def write_html(report_dir: Path, scoreboard: list[dict[str, Any]]) -> None:
         + "</tr>"
         for row in scoreboard
     )
-    table = (
-        "<table><thead><tr>"
-        + "".join(f"<th>{html.escape(key)}</th>" for key in headers)
-        + "</tr></thead><tbody>"
-        + rows
-        + "</tbody></table>"
-        if headers
-        else "<p>No completed evaluation records yet.</p>"
-    )
+    table = html_table(scoreboard)
+    diagnostic_table = html_table(diagnostics)
     image_names = [
         name
         for name in (
@@ -436,6 +565,8 @@ def write_html(report_dir: Path, scoreboard: list[dict[str, Any]]) -> None:
             "trial_comparison.png",
             "data_distribution.png",
             "scene_comparison.png",
+            "ood_data_distribution.png",
+            "ood_comparison.png",
         )
         if (report_dir / name).is_file()
     ]
@@ -446,7 +577,8 @@ def write_html(report_dir: Path, scoreboard: list[dict[str, Any]]) -> None:
     document = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Cantonese ASR experiment report</title>
 <style>body{{font-family:system-ui,sans-serif;max-width:1400px;margin:2rem auto;padding:0 1rem}}table{{border-collapse:collapse;width:100%;font-size:.85rem}}th,td{{border:1px solid #ddd;padding:.4rem;text-align:left}}img{{max-width:100%;height:auto}}section{{margin-top:2rem}}</style>
-</head><body><h1>Cantonese ASR experiment report</h1>{table}{images}</body></html>
+</head><body><h1>Cantonese ASR experiment report</h1>{table}
+<h2>Independent checkpoint diagnostics</h2>{diagnostic_table}{images}</body></html>
 """
     (report_dir / "report.html").write_text(document, encoding="utf-8")
 
@@ -456,19 +588,24 @@ def main() -> None:
     args.report_dir.mkdir(parents=True, exist_ok=True)
     records = collect_records(args.outputs_root)
     scoreboard = build_scoreboard(records)
+    diagnostics = collect_diagnostic_scoreboard(args.outputs_root)
     write_scoreboard(args.report_dir, scoreboard)
+    write_diagnostic_scoreboard(args.report_dir, diagnostics)
     if records:
         training_curves(args.report_dir, records)
         diagnostic_curves(args.report_dir, records)
         trial_comparison(args.report_dir, scoreboard)
     data_distribution(args.report_dir, args.data_report)
+    ood_data_distribution(args.report_dir, args.ood_data_report)
     scene_comparison(args.report_dir, args.outputs_root)
-    write_html(args.report_dir, scoreboard)
+    ood_comparison(args.report_dir, diagnostics)
+    write_html(args.report_dir, scoreboard, diagnostics)
     print(
         json.dumps(
             {
                 "metric_records": len(records),
                 "trials": len(scoreboard),
+                "checkpoint_diagnostics": len(diagnostics),
                 "report": str((args.report_dir / "report.html").resolve()),
             },
             ensure_ascii=False,
