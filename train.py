@@ -211,6 +211,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--generation-num-beams", type=int, default=1)
     parser.add_argument("--early-stopping-patience", type=int, default=0)
     parser.add_argument("--early-stopping-threshold", type=float, default=0.0)
+    parser.add_argument("--save-total-limit", type=int, default=3)
     parser.add_argument("--max-train-samples", type=int)
     parser.add_argument("--max-validation-samples", type=int)
     parser.add_argument("--max-train-probe-samples", type=int)
@@ -302,8 +303,8 @@ def main() -> None:
         raise SystemExit("Choose only one of --fp16 and --bf16")
     if args.batch_size < 1 or args.gradient_accumulation_steps < 1:
         raise SystemExit("Batch size and gradient accumulation must be positive")
-    if args.early_stopping_patience < 0:
-        raise SystemExit("Early stopping patience cannot be negative")
+    if args.early_stopping_patience < 0 or args.save_total_limit < 1:
+        raise SystemExit("Early stopping patience must be non-negative and save limit positive")
     set_seed(args.seed)
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -391,7 +392,7 @@ def main() -> None:
         load_best_model_at_end=True,
         metric_for_best_model=best_metric,
         greater_is_better=True,
-        save_total_limit=3,
+        save_total_limit=args.save_total_limit,
         save_safetensors=True,
         dataloader_num_workers=args.num_workers,
         dataloader_pin_memory=True,

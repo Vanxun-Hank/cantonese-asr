@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from cantonese_asr.io import read_jsonl, write_jsonl
+from scripts.build_external_training_mixes import balanced_counts
 
 
 def rows(prefix: str, count: int, source: str) -> list[dict[str, object]]:
@@ -69,3 +70,7 @@ def test_builds_balanced_deterministic_mixes(tmp_path: Path) -> None:
     first = (output / "external50.jsonl").read_bytes()
     subprocess.run(command, cwd=project_root, check=True, capture_output=True, text=True)
     assert (output / "external50.jsonl").read_bytes() == first
+
+
+def test_balancing_uses_remaining_source_after_common_voice_is_exhausted() -> None:
+    assert balanced_counts(17_008, [8_451, 64_779]) == [8_451, 8_557]
