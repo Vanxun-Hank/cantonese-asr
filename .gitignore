@@ -8,5 +8,9 @@ artifacts/
 outputs/
 logs/
 reports/server/
+!reports/server/
+reports/server/*
+!reports/server/round3/
+!reports/server/round3/**
 tmp/
 .worktrees/
