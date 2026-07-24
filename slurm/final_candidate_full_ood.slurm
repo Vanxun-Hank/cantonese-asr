@@ -29,6 +29,7 @@ do
 
   if "$PYTHON" - "$report" <<'PY'
 import json
+import math
 import sys
 
 try:
@@ -38,12 +39,41 @@ except (OSError, json.JSONDecodeError) as error:
     print(f"Invalid Round 3 selection report: {error}", file=sys.stderr)
     raise SystemExit(1)
 
-selected = report.get("selected") if isinstance(report, dict) else None
-raise SystemExit(
-    0
-    if isinstance(selected, dict) and selected.get("eligible") is True
-    else 1
+if not isinstance(report, dict):
+    print("Round 3 selection report must be a JSON object", file=sys.stderr)
+    raise SystemExit(1)
+surface_is_valid = (
+    report.get("selection_surface") == "internal_validation_only"
 )
+if not surface_is_valid:
+    print("Round 3 selection report is not validation-only", file=sys.stderr)
+    raise SystemExit(1)
+
+selected = report.get("selected")
+eligible_is_valid = (
+    isinstance(selected, dict) and selected.get("eligible") is True
+)
+if not eligible_is_valid:
+    print("Round 3 selection report has no eligible checkpoint", file=sys.stderr)
+    raise SystemExit(1)
+
+model_dir = selected.get("model_dir")
+if not isinstance(model_dir, str) or not model_dir.strip():
+    print("Round 3 selected checkpoint has no valid model_dir", file=sys.stderr)
+    raise SystemExit(1)
+
+try:
+    metrics = [
+        float(selected[field])
+        for field in ("sentence_accuracy_tol2", "cer", "validation_loss")
+    ]
+    int(selected["checkpoint_step"])
+except (KeyError, TypeError, ValueError) as error:
+    print(f"Round 3 selected checkpoint is incomplete: {error}", file=sys.stderr)
+    raise SystemExit(1)
+if not all(math.isfinite(value) for value in metrics):
+    print("Round 3 selected checkpoint has non-finite metrics", file=sys.stderr)
+    raise SystemExit(1)
 PY
   then
     ROUND3_SELECTIONS+=(--selection "$report")

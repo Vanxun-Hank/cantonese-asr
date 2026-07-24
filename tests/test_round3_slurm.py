@@ -1,3 +1,7 @@
+import json
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -73,4 +77,56 @@ def test_round3_selections_feed_final_candidate() -> None:
     assert 'ROUND3_SELECTIONS+=(--selection "$report")' in final_script
     assert '"${ROUND3_SELECTIONS[@]}"' in final_script
     assert 'selected.get("eligible") is True' in final_script
+    assert 'report.get("selection_surface") == "internal_validation_only"' in final_script
     assert "Skipping Round 3 selection report" in final_script
+
+
+def test_round3_prefilter_rejects_reports_that_global_selection_cannot_rank(
+    tmp_path: Path,
+) -> None:
+    final_script = FINAL_CANDIDATE_SLURM.read_text(encoding="utf-8")
+    match = re.search(
+        r'if "\$PYTHON" - "\$report" <<\'PY\'\n(?P<filter>.*?)\nPY',
+        final_script,
+        flags=re.DOTALL,
+    )
+    assert match is not None
+    filter_script = match.group("filter")
+
+    valid = {
+        "selection_surface": "internal_validation_only",
+        "selected": {
+            "eligible": True,
+            "model_dir": "outputs/run/checkpoint-1",
+            "sentence_accuracy_tol2": 0.83,
+            "cer": 0.11,
+            "validation_loss": 0.42,
+            "checkpoint_step": 1,
+        },
+    }
+
+    def filter_returncode(payload: object) -> int:
+        report = tmp_path / "selection.json"
+        report.write_text(
+            json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+        )
+        return subprocess.run(
+            [sys.executable, "-", str(report)],
+            input=filter_script,
+            text=True,
+            capture_output=True,
+            check=False,
+        ).returncode
+
+    assert filter_returncode(valid) == 0
+
+    wrong_surface = {**valid, "selection_surface": "ood"}
+    assert filter_returncode(wrong_surface) != 0
+
+    missing_metric = json.loads(json.dumps(valid))
+    del missing_metric["selected"]["validation_loss"]
+    assert filter_returncode(missing_metric) != 0
+
+    invalid_metric = json.loads(json.dumps(valid))
+    invalid_metric["selected"]["cer"] = "not-a-number"
+    assert filter_returncode(invalid_metric) != 0
