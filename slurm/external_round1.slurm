@@ -6,9 +6,9 @@
 #SBATCH --mem=64G
 #SBATCH --time=04:00:00
 #SBATCH --array=0-3
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%A_%a.out
+#SBATCH --output=logs/%x-%A_%a.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 LR=2e-5
 SCHEDULER=linear

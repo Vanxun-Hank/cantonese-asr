@@ -1,5 +1,0 @@
-﻿trial,stage,comparable_validation,best_epoch,global_step,sentence_accuracy_tol2,cer,validation_loss,train_probe_accuracy,gpu_peak_allocated_gb,elapsed_seconds,slurm_job_id,metrics_path
-external80,experiment,True,3.0,5901,0.8404558404558404,0.09256092347156905,0.2526870667934418,0.953125,3.5643320083618164,2801.368188917055,981,outputs/external-round3/external80/metrics.jsonl
-all_train,experiment,True,3.0,14913,0.8404558404558404,0.09288157332193245,0.2596170902252197,0.92578125,3.5618906021118164,6621.531060482957,979,outputs/external-round3/all_train/metrics.jsonl
-external73,experiment,True,3.0,4371,0.8361823361823362,0.10677640017101325,0.25478702783584595,0.9453125,3.5511484146118164,2180.6870353670092,980,outputs/external-round3/external73/metrics.jsonl
-external85,experiment,True,3.0,7866,0.8347578347578347,0.08935442496793501,0.25352850556373596,0.94140625,3.56209659576416,3620.667444509105,982,outputs/external-round3/external85/metrics.jsonl

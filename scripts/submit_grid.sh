@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR=${PROJECT_DIR:-/home/bolin/cantonese-asr}
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_DIR=${PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}
 BATCH_SIZE=${BATCH_SIZE:-4}
 GRAD_ACCUM=${GRAD_ACCUM:-4}
 
@@ -14,4 +15,3 @@ REPORT_JOB=$(sbatch --parsable --dependency="afterany:$GRID_JOB" slurm/report_al
 
 echo "grid_job=$GRID_JOB"
 echo "report_job=$REPORT_JOB"
-

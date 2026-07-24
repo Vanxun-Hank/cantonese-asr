@@ -6,9 +6,9 @@
 #SBATCH --mem=48G
 #SBATCH --time=02:00:00
 #SBATCH --array=0-2%3
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%A_%a.out
+#SBATCH --output=logs/%x-%A_%a.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 BATCHES=(4 6 8)
 ACCUMULATIONS=(4 3 2)

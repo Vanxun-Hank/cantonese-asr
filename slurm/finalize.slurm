@@ -5,9 +5,9 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
 #SBATCH --time=01:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 RUN_DIR=outputs/final/final-lr2e-5-linear-b8-ga2
 SELECTION="$RUN_DIR/checkpoint_selection.json"
@@ -69,6 +69,6 @@ MODEL_DIR=$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["s
   --data-report artifacts/manifests/data_report.json \
   --ood-data-report artifacts/manifests/ood/v1/data_report.json \
   --report-dir artifacts/reports/experiments/all
-"$PYTHON" scripts/check_goal1.py \
+"$PYTHON" scripts/check_submission.py \
   --submission-zip "$SUBMISSION_ZIP" \
-  --output-report artifacts/reports/goal1_acceptance.json
+  --output-report artifacts/reports/submission_acceptance.json

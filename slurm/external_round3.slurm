@@ -6,10 +6,10 @@
 #SBATCH --mem=64G
 #SBATCH --time=12:00:00
 #SBATCH --array=0-3%4
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%A_%a.out
+#SBATCH --output=logs/%x-%A_%a.out
 
 set -euo pipefail
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 INDEX=${SLURM_ARRAY_TASK_ID:?Missing array task ID}
 MIX_ROOT=artifacts/manifests/external/round3

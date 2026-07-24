@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR=${PROJECT_DIR:-/home/bolin/cantonese-asr}
-ENV_DIR=${ENV_DIR:-/home/bolin/envs/cantonese-asr-whisper}
-CONDA_BIN=${CONDA_BIN:-/home/public/conda/miniforge3/bin/conda}
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_DIR=${PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}
+ENV_DIR=${ENV_DIR:-$PROJECT_DIR/.venv}
+CONDA_BIN=${CONDA_BIN:-$(command -v conda || true)}
 REPORT_DIR="$PROJECT_DIR/artifacts/reports/deployment"
 
-if [[ ! -x "$CONDA_BIN" ]]; then
+if [[ -z "$CONDA_BIN" || ! -x "$CONDA_BIN" ]]; then
   echo "Conda executable not found: $CONDA_BIN" >&2
   exit 1
 fi
@@ -47,4 +48,3 @@ print(json.dumps({
 PY
 
 echo "Environment ready: $ENV_DIR"
-

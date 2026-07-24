@@ -27,7 +27,7 @@ from cantonese_asr.io import sha256_file
 MODEL_ID = "openai/whisper-small"
 DATASET_ID = "leeduckgo/cantonese-life-scenarios-corpus"
 DEFAULT_MIRROR = "https://hf-mirror.com"
-USER_AGENT = "cantonese-asr-goal1/1.0 huggingface-hub-compatible"
+USER_AGENT = "cantonese-asr/1.0 huggingface-hub-compatible"
 CRITICAL_DATA_FILES = {
     "README.md",
     "data.zip",

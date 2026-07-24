@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR=${PROJECT_DIR:-/home/bolin/cantonese-asr}
-ENV_DIR=${ENV_DIR:-/home/bolin/envs/cantonese-asr-whisper}
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_DIR=${PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}
+ENV_DIR=${ENV_DIR:-$PROJECT_DIR/.venv}
 PYTHON=${PYTHON:-$ENV_DIR/bin/python}
 
 if [[ ! -x "$PYTHON" ]]; then
@@ -28,4 +29,3 @@ plot_run() {
     --data-report artifacts/manifests/data_report.json \
     --report-dir "artifacts/reports/experiments/by_trial/$report_name"
 }
-

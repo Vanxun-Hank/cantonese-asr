@@ -59,7 +59,7 @@ def validate_names(names: list[str]) -> None:
     if len(weights) != 1:
         raise ValueError(f"Expected exactly one ASR weight, found: {weights}")
     if weights[0] != "model.safetensors":
-        raise ValueError("Goal 1 packaging requires model.safetensors")
+        raise ValueError("Submission packaging requires model.safetensors")
 
 
 def main() -> None:

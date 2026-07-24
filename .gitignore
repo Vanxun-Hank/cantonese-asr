@@ -7,10 +7,6 @@ __pycache__/
 artifacts/
 outputs/
 logs/
-reports/server/
-!reports/server/
-reports/server/*
-!reports/server/round3/
-!reports/server/round3/**
+reports/**/.DS_Store
 tmp/
 .worktrees/

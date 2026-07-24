@@ -1,75 +1,66 @@
-# 点心杯粤语 ASR：Whisper-small Full SFT
+# Cantonese ASR with Whisper-small
 
-本项目实现“Mac 本地开发 + `/home/bolin` Slurm 训练”的初赛 Goal 1。基座固定为 `openai/whisper-small`，不修改架构或 tokenizer，不使用 SenseVoice、蒸馏、模型融合或未经批准的外部数据。
+本项目提供一套基于 `openai/whisper-small` 的粤语自动语音识别训练、评测和离线打包流程。模型保持 Whisper-small 架构与 tokenizer 不变，通过监督微调适配粤语音频—文本数据。
 
-## 核心规则
+## 功能
 
-- 训练标签只使用 `index.csv` 的“粤语原文”。
-- 官方主指标：预测繁转简并去标点/空白后，字符编辑距离 ≤ 2 的整句计为正确；CER 为保护指标。
-- `train_probe` 只诊断过拟合；checkpoint 和模型选择只使用 internal validation。
-- 推理、训练验证和提交统一使用 `generation_max_length=225`。
-- 选模硬护栏为 `sentence_accuracy_tol2 >= 0.8219` 且 `CER <= 0.1163`；通过后依次比较准确率、CER、validation loss 和较早 checkpoint。
-- `test_audio.zip` 与 `template_pre.jsonl` 不进入训练和超参数选择。
-- Common Voice dev/test 与 MDCC validation/test 组成独立 OOD 诊断面板；OOD 永不参与 checkpoint 或模型选择。
-- 正式提交是根目录平铺、只有一个 `model.safetensors` 的离线 ZIP。
+- 整理官方及外部粤语音频—文本数据，并生成可复现的 JSONL manifest。
+- 使用 Full SFT、AdamW、学习率调度和 Slurm 训练 Whisper-small。
+- 记录 loss、整句准确率、CER、学习率、显存和吞吐等实验指标。
+- 生成 PNG、CSV、JSON 和 HTML 实验报告。
+- 根据固定验证集选择 checkpoint，并使用独立 OOD 数据诊断泛化能力。
+- 生成根目录平铺、只包含一个 `model.safetensors` 的离线提交包。
 
-## 快速入口
+## 数据格式
 
-完整命令和每一阶段的 gate 见 [服务器运行手册](docs/RUNBOOK.md)。
+训练 manifest 的核心字段如下：
+
+```json
+{
+  "id": "00001",
+  "audio_path": "artifacts/data/train_raw/00001.wav",
+  "text": "你好！",
+  "duration_s": 1.24,
+  "source": "official",
+  "split": "train"
+}
+```
+
+其中 `text` 是监督微调标签。普通话翻译、粤拼和场景等字段可以保留为元数据，但不替代粤语原文。
+
+## 基本流程
 
 ```bash
-# Mac：同步代码（排除数据、模型和输出）
-bash scripts/sync_server.sh
-
-# Server login node：环境、下载、解压、manifest
+# 安装环境和依赖
 bash scripts/server_bootstrap.sh
-/home/bolin/envs/cantonese-asr-whisper/bin/python scripts/download_assets.py
-/home/bolin/envs/cantonese-asr-whisper/bin/python scripts/extract_assets.py
-/home/bolin/envs/cantonese-asr-whisper/bin/python scripts/prepare_manifest.py \
+
+# 下载、解压并整理官方数据
+python scripts/download_assets.py
+python scripts/extract_assets.py
+python scripts/prepare_manifest.py \
   --index-csv artifacts/datasets/official/index.csv \
   --audio-root artifacts/data/train_raw \
   --output-dir artifacts/manifests \
   --exclude-test-list artifacts/datasets/official/template_pre.jsonl
 
-# Gate 顺序：GPU → zero-shot → smoke → 显存探测 → 四卡三轮
+# 训练前检查和基线
 sbatch slurm/gpu_preflight.slurm
 sbatch slurm/zero_shot.slurm
 sbatch slurm/smoke.slurm
 sbatch slurm/memory_probe.slurm
+
+# 启动超参数实验
 BATCH_SIZE=4 GRAD_ACCUM=4 bash scripts/submit_grid.sh
 ```
 
-每轮结束固定调用 `scripts/plot_experiments.py`，生成 PNG、CSV、JSON 和 HTML；无需让 Agent 重写绘图逻辑。
+服务器目录、Python 环境和远程主机可通过 `PROJECT_DIR`、`ENV_DIR`、`PYTHON`、`REMOTE_HOST` 与 `REMOTE_DIR` 环境变量配置。
 
-## 外部数据与 OOD 复评
+## 评测与报告
 
-外部训练数据仍须使用已获准且有来源记录的 Common Voice/MDCC 音频—粤语文本。训练 split 与 OOD publisher split 严格分离，并对官方 train、validation、公开排除集和外部训练集执行规范化文本、音频 SHA-256 与来源 ID 隔离。
+主指标是 `sentence_accuracy_tol2`：预测文本与参考文本经过统一规范化后，字符编辑距离不超过 2 的句子计为正确。项目同时记录 CER，并提供 checkpoint 对比、错误样例、字符混淆、场景指标和 OOD 诊断。
 
-```bash
-# CPU 数据准备：输出完整 OOD 与固定 4×500 面板
-sbatch slurm/prepare_ood_data.slurm
+每轮可复用 `scripts/plot_experiments.py` 生成报告。适合公开的实验结果统一放在 `reports/roundN/`，每个目录只包含对应轮次的最终确认结果；失败或未完成的实验不发布。
 
-# 统一 225-token 解码，复评四组外部实验及历史最终模型（不更新权重）
-sbatch slurm/reevaluate_candidates.slurm
+## 离线提交
 
-# 只按 internal validation 做全局选模，再跑完整 OOD、打包和离线验收
-sbatch slurm/final_candidate_full_ood.slurm
-```
-
-主要证据文件：
-
-- `artifacts/manifests/ood/v1/data_report.json`：候选数量、隔离结果、面板构成及 manifest SHA-256。
-- `outputs/**/checkpoint_selection.json`：每个 run 的硬护栏与排序证据。
-- `outputs/final-candidate/global_selection.json`：跨 run 的 validation-only 最终选择。
-- `artifacts/reports/experiments/all/report.html`：训练曲线、checkpoint/OOD 对照和数据分布。
-- `outputs/final-candidate/submission.zip`：经过完全离线验证的单权重提交包。
-
-## 本地验证
-
-```bash
-conda run -n dl python -m pytest -q
-python3 -m py_compile train.py predict.py cantonese_asr/*.py scripts/*.py
-bash -n scripts/*.sh slurm/*.sh slurm/*.slurm
-```
-
-教学 Notebook：[fine_tune_whisper_cantonese.ipynb](notebooks/fine_tune_whisper_cantonese.ipynb)。它用于数据抽查和理解训练流程，不承担正式长训练。
+`scripts/package_submission.py` 会创建平铺 ZIP，并校验其中恰好包含一个 `model.safetensors`。`scripts/verify_submission.py` 可在断网模式下检查模型加载、预测输出数量、顺序和 `audio_path` 一致性。

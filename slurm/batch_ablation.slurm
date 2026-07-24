@@ -6,9 +6,9 @@
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
 #SBATCH --array=0-1%2
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%A_%a.out
+#SBATCH --output=logs/%x-%A_%a.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 BEST_LR=${BEST_LR:?Submit with --export=ALL,BEST_LR=...,BEST_SCHEDULER=...,BATCH_SIZE=...}
 BEST_SCHEDULER=${BEST_SCHEDULER:?}

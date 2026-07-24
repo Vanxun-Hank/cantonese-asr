@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOCAL_DIR=${LOCAL_DIR:-/Users/zhangxun/Desktop/service/cantonese-asr}
-REMOTE_HOST=${REMOTE_HOST:-pavb}
-REMOTE_DIR=${REMOTE_DIR:-/home/bolin/cantonese-asr}
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+LOCAL_DIR=${LOCAL_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}
+REMOTE_HOST=${REMOTE_HOST:?Set REMOTE_HOST, for example user@cluster}
+REMOTE_DIR=${REMOTE_DIR:-cantonese-asr}
 
 ssh "$REMOTE_HOST" "mkdir -p '$REMOTE_DIR/logs' '$REMOTE_DIR/outputs' '$REMOTE_DIR/artifacts/reports'"
 rsync -av \
@@ -15,7 +16,6 @@ rsync -av \
   --exclude 'artifacts' \
   --exclude 'outputs' \
   --exclude 'logs' \
-  --exclude 'reports/server' \
   "$LOCAL_DIR/" "$REMOTE_HOST:$REMOTE_DIR/"
 
 echo "Synced code to $REMOTE_HOST:$REMOTE_DIR"

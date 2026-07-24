@@ -5,9 +5,9 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=06:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 FINAL_DIR=outputs/final-candidate
 SELECTION="$FINAL_DIR/global_selection.json"
@@ -165,6 +165,6 @@ cp "$SELECTION" "$REPORT_DIR/global_selection.json"
   --max-samples 32 \
   --output-report "$FINAL_DIR/offline_submission_verification.json"
 
-"$PYTHON" scripts/check_goal1.py \
+"$PYTHON" scripts/check_submission.py \
   --submission-zip "$FINAL_DIR/submission.zip" \
-  --output-report artifacts/reports/goal1_acceptance.json
+  --output-report artifacts/reports/submission_acceptance.json

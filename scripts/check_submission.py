@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit all Goal 1 acceptance criteria from current artifacts and exit nonzero on gaps."""
+"""Audit data, model-selection, reporting, and submission evidence."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-report",
         type=Path,
-        default=Path("artifacts/reports/goal1_acceptance.json"),
+        default=Path("artifacts/reports/submission_acceptance.json"),
     )
     parser.add_argument("--required-improvement", type=float, default=0.02)
     parser.add_argument("--max-cer", type=float, default=0.1163)

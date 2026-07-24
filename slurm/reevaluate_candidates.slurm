@@ -6,9 +6,9 @@
 #SBATCH --mem=48G
 #SBATCH --time=06:00:00
 #SBATCH --array=0-4%4
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%A_%a.out
+#SBATCH --output=logs/%x-%A_%a.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 RUNS=(
   outputs/external-round1/ext-r1-control-official

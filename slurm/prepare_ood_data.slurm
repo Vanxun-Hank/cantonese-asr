@@ -4,9 +4,9 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=06:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 CV_DATASET_ROOT=artifacts/datasets/external/common_voice_26_zh_HK
 CV_ROOT="$CV_DATASET_ROOT/partial_full_extract_20260723/cv-corpus-26.0-2026-06-12/zh-HK"

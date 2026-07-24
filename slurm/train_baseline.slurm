@@ -5,11 +5,11 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
 # Single-trial reference run. The maintained four-way comparison remains
 # slurm/grid_search.slurm; this entry never submits a nested Slurm job.
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 TRIAL="baseline-lr1e-5-linear"
 RUN_DIR="outputs/baseline/$TRIAL"

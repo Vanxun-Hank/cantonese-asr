@@ -5,9 +5,9 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 FINAL_LR=${FINAL_LR:?Submit with FINAL_LR, FINAL_SCHEDULER, BATCH_SIZE and GRAD_ACCUM}
 FINAL_SCHEDULER=${FINAL_SCHEDULER:?}
