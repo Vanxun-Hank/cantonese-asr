@@ -29,6 +29,9 @@ for operational procedures.
 - Fixed official validation is the only checkpoint and model selection
   surface. `train_probe`, OOD data, public samples, and platform results are
   diagnostics only.
+- A candidate must have `sentence_accuracy_tol2 >= 0.8219` and `CER <= 0.1163`.
+  Rank eligible candidates by accuracy descending, CER ascending, validation
+  loss ascending, then earlier checkpoint or epoch.
 - Fixed validation, public exclusions, and OOD manifests must never enter
   training. Update overlap and deterministic-sampling tests when data behavior
   changes.
@@ -50,7 +53,7 @@ python -m pytest -q tests/test_build_external_training_mixes.py
 python -m pytest -q tests/test_round3_slurm.py
 /home/bolin/envs/cantonese-asr-whisper/bin/python -m pytest -q
 python3 -m compileall -q cantonese_asr scripts train.py predict.py
-bash -n scripts/*.sh slurm/*.sh slurm/*.slurm
+for file in scripts/*.sh slurm/*.sh slurm/*.slurm; do bash -n "$file"; done
 ```
 
 Add or update tests whenever observable behavior changes. Before training,
