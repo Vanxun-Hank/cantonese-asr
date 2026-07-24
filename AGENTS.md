@@ -36,8 +36,11 @@ for operational procedures.
   training. Update overlap and deterministic-sampling tests when data behavior
   changes.
 - Use fixed manifests, seeds, and resolved configurations as experiment
-  evidence. Write each run to a new run-specific output directory; never
-  overwrite manifests, reports, checkpoints, or submission artifacts.
+  evidence. Write each run to a new run-specific output directory. Do not
+  overwrite immutable training runs, checkpoints, or submission evidence.
+  Derived manifests and reports at documented fixed paths may be deliberately
+  regenerated only after validating inputs and intentionally preserving or
+  replacing stale evidence.
 - An offline submission is flat at the ZIP root, contains exactly one
   `model.safetensors`, and must not depend on server paths or network access.
 - Round 3 design decisions are documented in
@@ -49,10 +52,14 @@ Run focused tests while iterating, then the complete suite in the canonical
 server environment:
 
 ```bash
+# Mac: focused tests while iterating
 python -m pytest -q tests/test_build_external_training_mixes.py
 python -m pytest -q tests/test_round3_slurm.py
-/home/bolin/envs/cantonese-asr-whisper/bin/python -m pytest -q
-python3 -m compileall -q cantonese_asr scripts train.py predict.py
+
+# Server: complete verification in the canonical environment
+PY=/home/bolin/envs/cantonese-asr-whisper/bin/python
+"$PY" -m pytest -q
+"$PY" -m compileall -q cantonese_asr scripts train.py predict.py
 for file in scripts/*.sh slurm/*.sh slurm/*.slurm; do bash -n "$file"; done
 ```
 
