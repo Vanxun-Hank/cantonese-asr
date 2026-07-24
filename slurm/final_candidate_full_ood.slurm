@@ -15,6 +15,43 @@ REPORT_DIR="$FINAL_DIR/full_ood"
 PREDICTIONS="$REPORT_DIR/predictions.jsonl"
 mkdir -p "$REPORT_DIR"
 
+ROUND3_SELECTIONS=()
+for report in \
+  outputs/external-round3/external73/checkpoint_selection.json \
+  outputs/external-round3/external80/checkpoint_selection.json \
+  outputs/external-round3/external85/checkpoint_selection.json \
+  outputs/external-round3/all_train/checkpoint_selection.json
+do
+  if [[ ! -f "$report" ]]; then
+    echo "Skipping Round 3 selection report (missing): $report" >&2
+    continue
+  fi
+
+  if "$PYTHON" - "$report" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as handle:
+        report = json.load(handle)
+except (OSError, json.JSONDecodeError) as error:
+    print(f"Invalid Round 3 selection report: {error}", file=sys.stderr)
+    raise SystemExit(1)
+
+selected = report.get("selected") if isinstance(report, dict) else None
+raise SystemExit(
+    0
+    if isinstance(selected, dict) and selected.get("eligible") is True
+    else 1
+)
+PY
+  then
+    ROUND3_SELECTIONS+=(--selection "$report")
+  else
+    echo "Skipping Round 3 selection report (invalid or ineligible): $report" >&2
+  fi
+done
+
 "$PYTHON" scripts/select_global_candidate.py \
   --selection outputs/external-round1/ext-r1-control-official/checkpoint_selection.json \
   --selection outputs/external-round1/ext-r1-external25-balanced/checkpoint_selection.json \
@@ -25,6 +62,7 @@ mkdir -p "$REPORT_DIR"
   --selection outputs/external-round2/ext-r2-external73-e3-linear/checkpoint_selection.json \
   --selection outputs/external-round2/ext-r2-external73-e5-linear/checkpoint_selection.json \
   --selection outputs/external-round2/ext-r2-external73-e3-cosine/checkpoint_selection.json \
+  "${ROUND3_SELECTIONS[@]}" \
   --output "$SELECTION"
 
 MODEL_DIR=$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected"]["model_dir"])' "$SELECTION")
