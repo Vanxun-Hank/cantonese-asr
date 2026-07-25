@@ -44,7 +44,11 @@ def test_round8_smoke_is_fresh_full_sft_without_specaugment() -> None:
         "--no-apply-spec-augment",
         "--generation-max-length 225",
         "scripts/evaluate_checkpoints.py",
+        "--write-symmetric-t2s",
+        "metrics_symmetric_t2s.json",
         'metrics["sentence_accuracy_tol2"] < 0.75',
+        'loss["loss"] >= 0.5',
+        "smoke_verification.json",
     ):
         assert token in script
     assert "--resume-from-checkpoint" not in script

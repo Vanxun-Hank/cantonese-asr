@@ -55,6 +55,35 @@ fi
   --num-workers 2 \
   --generation-max-length 225
 
+"$PYTHON" - "$RUN_DIR" "$MANIFEST" <<'PY'
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+run_dir = Path(sys.argv[1])
+manifest = Path(sys.argv[2])
+state = json.loads((run_dir / "trainer_state.json").read_text(encoding="utf-8"))
+best = Path(state["best_model_checkpoint"]).name
+report_dir = run_dir / "diagnostics" / best / "validation"
+subprocess.run(
+    [
+        sys.executable,
+        "scripts/evaluate_predictions.py",
+        "--pred-jsonl",
+        str(report_dir / "predictions.jsonl"),
+        "--reference",
+        str(manifest),
+        "--reference-field",
+        "text",
+        "--report-dir",
+        str(report_dir),
+        "--write-symmetric-t2s",
+    ],
+    check=True,
+)
+PY
+
 "$PYTHON" - "$RUN_DIR" <<'PY'
 import json
 import sys
@@ -68,14 +97,28 @@ if config["model"]["spec_augment"]["enabled"] is not False:
     raise SystemExit("Round 8 smoke unexpectedly enabled SpecAugment")
 state = json.loads((run_dir / "trainer_state.json").read_text(encoding="utf-8"))
 best = Path(state["best_model_checkpoint"]).name
+report_dir = run_dir / "diagnostics" / best / "validation"
 metrics = json.loads(
-    (run_dir / "diagnostics" / best / "validation" / "metrics.json").read_text(
+    (report_dir / "metrics_symmetric_t2s.json").read_text(
         encoding="utf-8"
     )
 )
 if metrics["sentence_accuracy_tol2"] < 0.75:
-    raise SystemExit(f"32-sample smoke overfit failed: {metrics}")
+    raise SystemExit(f"32-sample symmetric-t2s smoke overfit failed: {metrics}")
 if not (run_dir / "best_model" / "model.safetensors").is_file():
     raise SystemExit("Round 8 smoke best_model is not reloadable")
-print(json.dumps({"best_checkpoint": best, "metrics": metrics}, ensure_ascii=False, indent=2))
+loss = json.loads((report_dir / "teacher_forced_loss.json").read_text(encoding="utf-8"))
+if loss["loss"] >= 0.5:
+    raise SystemExit(f"32-sample teacher-forced loss is too high: {loss}")
+verification = {
+    "passed": True,
+    "best_checkpoint": best,
+    "symmetric_t2s_metrics": metrics,
+    "teacher_forced_loss": loss,
+}
+(run_dir / "smoke_verification.json").write_text(
+    json.dumps(verification, ensure_ascii=False, indent=2) + "\n",
+    encoding="utf-8",
+)
+print(json.dumps(verification, ensure_ascii=False, indent=2))
 PY
