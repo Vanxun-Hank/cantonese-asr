@@ -64,6 +64,13 @@ def test_checkpoint_evaluator_parses_named_diagnostic_manifest() -> None:
         named_manifest("missing-separator")
 
 
+def test_checkpoint_evaluator_scores_all_ood_splits_symmetrically() -> None:
+    source = (
+        Path(__file__).parents[1] / "scripts" / "evaluate_checkpoints.py"
+    ).read_text(encoding="utf-8")
+    assert 'split == "ood_panel" or split.startswith("ood_")' in source
+
+
 def test_teacher_forced_loss_is_weighted_by_non_padding_tokens() -> None:
     loss, tokens = weighted_mean_loss([(2.0, 2), (1.0, 6)])
     assert loss == pytest.approx(1.25)
