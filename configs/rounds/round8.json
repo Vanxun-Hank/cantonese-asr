@@ -10,6 +10,21 @@
       "id": "exp001",
       "trial_name": "official-mdcc73-fresh",
       "run_dir": "outputs/round8-mdcc-source-isolation/official-mdcc73-fresh"
+    },
+    {
+      "id": "exp002",
+      "trial_name": "official-mdcc57-fresh",
+      "run_dir": "outputs/round8-source-ablation/official-mdcc57-fresh"
+    },
+    {
+      "id": "exp003",
+      "trial_name": "official-cv57-fresh",
+      "run_dir": "outputs/round8-source-ablation/official-cv57-fresh"
+    },
+    {
+      "id": "exp004",
+      "trial_name": "round2-exact-fresh",
+      "run_dir": "outputs/round8-source-ablation/round2-exact-fresh"
     }
   ]
 }
