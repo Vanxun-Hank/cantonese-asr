@@ -1,0 +1,15 @@
+{
+  "round_id": "round8",
+  "public_test_manifest": "artifacts/datasets/official/template_pre.jsonl",
+  "public_audio_dir": "artifacts/data/train_raw/4856-10393",
+  "public_reference_field": "ref_text",
+  "public_batch_size": 8,
+  "generation_max_length": 225,
+  "experiments": [
+    {
+      "id": "exp001",
+      "trial_name": "official-mdcc73-fresh",
+      "run_dir": "outputs/round8-mdcc-source-isolation/official-mdcc73-fresh"
+    }
+  ]
+}

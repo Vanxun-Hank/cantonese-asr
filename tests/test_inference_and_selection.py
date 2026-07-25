@@ -10,7 +10,11 @@ import pytest
 
 from cantonese_asr.io import write_jsonl
 from predict import generation_kwargs, validate_inference_args
-from scripts.evaluate_checkpoints import prediction_command, resolve_best_checkpoint_name
+from scripts.evaluate_checkpoints import (
+    named_manifest,
+    prediction_command,
+    resolve_best_checkpoint_name,
+)
 from scripts.evaluate_manifest_loss import weighted_mean_loss
 from scripts.select_global_candidate import load_candidates
 
@@ -47,6 +51,17 @@ def test_checkpoint_evaluator_resolves_best_model_copy(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert resolve_best_checkpoint_name(tmp_path) == "checkpoint-321"
+
+
+def test_checkpoint_evaluator_parses_named_diagnostic_manifest() -> None:
+    assert named_manifest("ood_mdcc=/tmp/mdcc.jsonl") == (
+        "ood_mdcc",
+        Path("/tmp/mdcc.jsonl"),
+    )
+    with pytest.raises(argparse.ArgumentTypeError):
+        named_manifest("validation=/tmp/validation.jsonl")
+    with pytest.raises(argparse.ArgumentTypeError):
+        named_manifest("missing-separator")
 
 
 def test_teacher_forced_loss_is_weighted_by_non_padding_tokens() -> None:

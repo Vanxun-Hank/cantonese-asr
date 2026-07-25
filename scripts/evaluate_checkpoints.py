@@ -13,6 +13,24 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+def named_manifest(value: str) -> tuple[str, Path]:
+    if "=" not in value:
+        raise argparse.ArgumentTypeError(
+            "diagnostic manifest must use NAME=/path/to/manifest.jsonl"
+        )
+    name, path = value.split("=", 1)
+    name = name.strip()
+    if not name or not name.replace("_", "").replace("-", "").isalnum():
+        raise argparse.ArgumentTypeError(
+            f"invalid diagnostic split name: {name!r}"
+        )
+    if name in {"validation", "train_probe", "ood_panel"}:
+        raise argparse.ArgumentTypeError(f"reserved diagnostic split name: {name}")
+    if not path.strip():
+        raise argparse.ArgumentTypeError("diagnostic manifest path is empty")
+    return name, Path(path)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-dir", type=Path, required=True)
@@ -20,6 +38,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--validation-manifest", type=Path, required=True)
     parser.add_argument("--train-probe-manifest", type=Path, required=True)
     parser.add_argument("--ood-panel-manifest", type=Path)
+    parser.add_argument(
+        "--diagnostic-manifest",
+        type=named_manifest,
+        action="append",
+        default=[],
+        metavar="NAME=PATH",
+        help="Additional diagnostic-only split; may be repeated.",
+    )
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--generation-max-length", type=int, default=225)
@@ -100,6 +126,7 @@ def main() -> None:
         ]
         if args.ood_panel_manifest:
             splits.append(("ood_panel", args.ood_panel_manifest))
+        splits.extend(args.diagnostic_manifest)
         for split, manifest in splits:
             report_dir = args.run_dir / "diagnostics" / checkpoint_name / split
             prediction_path = report_dir / "predictions.jsonl"
