@@ -59,7 +59,19 @@ def test_overlap_separates_repeated_sentence_from_audio_duplicate() -> None:
     result = compare_rows(yue, existing, "zh-HK")
     assert result["canonical_sentence_overlap"]["count"] == 1
     assert result["audio_sha256_overlap"]["count"] == 0
+    assert result["audio_transcript_pair_overlap"]["count"] == 0
     assert result["same_sentence_new_audio"]["count"] == 1
+
+
+def test_audio_transcript_pair_overlap_uses_matching_hash_and_text() -> None:
+    candidate = [
+        {"canonical": "你好", "audio_sha256": "same", "pcm_sha256": "candidate-pcm"}
+    ]
+    reference = [
+        {"canonical": "你好", "audio_sha256": "same", "pcm_sha256": "reference-pcm"}
+    ]
+    result = compare_rows(candidate, reference, "reference")
+    assert result["audio_transcript_pair_overlap"]["count"] == 1
 
 
 def test_protected_text_overlap_is_hard_quarantine() -> None:

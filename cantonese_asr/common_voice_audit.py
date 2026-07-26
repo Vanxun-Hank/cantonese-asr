@@ -145,22 +145,23 @@ def compare_rows(
         )
         for row in candidate_rows
     )
+    reference_pairs = {
+        (kind, digest, str(reference.get("canonical") or ""))
+        for reference in reference_rows
+        for kind, digest in (
+            ("pcm", str(reference.get("pcm_sha256") or "")),
+            ("audio", str(reference.get("audio_sha256") or "")),
+        )
+        if digest and reference.get("canonical")
+    }
     pair_overlap = sum(
         any(
-            str(reference.get("canonical") or "") == str(row.get("canonical") or "")
-            and (
-                (
-                    row.get("pcm_sha256")
-                    and reference.get("pcm_sha256")
-                    and str(reference["pcm_sha256"]) == str(row["pcm_sha256"])
-                )
-                or (
-                    row.get("audio_sha256")
-                    and reference.get("audio_sha256")
-                    and str(reference["audio_sha256"]) == str(row["audio_sha256"])
-                )
+            (kind, digest, str(row.get("canonical") or "")) in reference_pairs
+            for kind, digest in (
+                ("pcm", str(row.get("pcm_sha256") or "")),
+                ("audio", str(row.get("audio_sha256") or "")),
             )
-            for reference in reference_rows
+            if digest
         )
         for row in candidate_rows
     )
