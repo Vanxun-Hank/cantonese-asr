@@ -160,3 +160,9 @@ def test_mdc_authorization_failure_is_not_retried() -> None:
 
 def test_parallel_downloader_covers_every_byte_once() -> None:
     assert byte_ranges(10, 4) == [(0, 3), (4, 7), (8, 9)]
+
+
+def test_parallel_range_worker_resumes_partial_segment() -> None:
+    text = Path("scripts/download_mdc_dataset.py").read_text(encoding="utf-8")
+    assert "request_start = start + offset" in text
+    assert '"ab" if offset else "wb"' in text

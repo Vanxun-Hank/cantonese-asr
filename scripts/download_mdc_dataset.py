@@ -113,10 +113,17 @@ def download_range(
     partial = target.with_name(f"{target.name}.part")
     for attempt in range(1, max_attempts + 1):
         try:
-            partial.unlink(missing_ok=True)
+            offset = partial.stat().st_size if partial.is_file() else 0
+            if offset > expected:
+                partial.unlink()
+                offset = 0
+            if offset == expected:
+                partial.replace(target)
+                return target
+            request_start = start + offset
             with requests.get(
                 download_url,
-                headers={"Range": f"bytes={start}-{end}"},
+                headers={"Range": f"bytes={request_start}-{end}"},
                 stream=True,
                 timeout=(30, 300),
             ) as response:
@@ -125,8 +132,8 @@ def download_range(
                     raise IOError(
                         f"range server returned HTTP {response.status_code}"
                     )
-                written = 0
-                with partial.open("wb") as handle:
+                written = offset
+                with partial.open("ab" if offset else "wb") as handle:
                     for chunk in response.iter_content(chunk_bytes):
                         if chunk:
                             handle.write(chunk)
