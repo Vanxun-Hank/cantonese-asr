@@ -7,6 +7,7 @@ The API key is read from ``MDC_API_KEY`` and is never written to logs.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import os
 import re
 import time
@@ -31,6 +32,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-attempts", type=int, default=20)
     parser.add_argument("--chunk-mib", type=int, default=8)
     parser.add_argument("--progress-mib", type=int, default=128)
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Parallel HTTP range workers. Use 1 for the original serial downloader.",
+    )
+    parser.add_argument("--segment-mib", type=int, default=64)
     return parser.parse_args()
 
 
@@ -69,11 +77,141 @@ def create_download_session(
     return str(download_url), safe_filename
 
 
+def byte_ranges(total: int, segment_bytes: int) -> list[tuple[int, int]]:
+    if total < 1 or segment_bytes < 1:
+        raise ValueError("total and segment size must be positive")
+    return [
+        (start, min(total - 1, start + segment_bytes - 1))
+        for start in range(0, total, segment_bytes)
+    ]
+
+
+def range_total(download_url: str) -> int | None:
+    with requests.get(
+        download_url,
+        headers={"Range": "bytes=0-0"},
+        stream=True,
+        timeout=(30, 300),
+    ) as response:
+        response.raise_for_status()
+        if response.status_code != 206:
+            return None
+        return content_total(response, 0)
+
+
+def download_range(
+    download_url: str,
+    target: Path,
+    start: int,
+    end: int,
+    max_attempts: int,
+    chunk_bytes: int,
+) -> Path:
+    expected = end - start + 1
+    if target.is_file() and target.stat().st_size == expected:
+        return target
+    partial = target.with_name(f"{target.name}.part")
+    for attempt in range(1, max_attempts + 1):
+        try:
+            partial.unlink(missing_ok=True)
+            with requests.get(
+                download_url,
+                headers={"Range": f"bytes={start}-{end}"},
+                stream=True,
+                timeout=(30, 300),
+            ) as response:
+                response.raise_for_status()
+                if response.status_code != 206:
+                    raise IOError(
+                        f"range server returned HTTP {response.status_code}"
+                    )
+                written = 0
+                with partial.open("wb") as handle:
+                    for chunk in response.iter_content(chunk_bytes):
+                        if chunk:
+                            handle.write(chunk)
+                            written += len(chunk)
+            if written != expected:
+                raise IOError(
+                    f"incomplete range {start}-{end}: {written} != {expected}"
+                )
+            partial.replace(target)
+            return target
+        except (OSError, requests.RequestException):
+            if attempt == max_attempts:
+                raise
+            time.sleep(min(2**attempt, 30))
+    raise AssertionError("unreachable")
+
+
+def download_parallel(
+    args: argparse.Namespace,
+    download_url: str,
+    target: Path,
+) -> Path | None:
+    total = range_total(download_url)
+    if total is None:
+        return None
+    segment_bytes = args.segment_mib * 1024 * 1024
+    ranges = byte_ranges(total, segment_bytes)
+    segment_dir = target.with_name(f".{target.name}.segments")
+    segment_dir.mkdir(parents=True, exist_ok=True)
+    print(
+        f"Parallel download: total={total}, workers={args.workers}, "
+        f"segments={len(ranges)}, segment_mib={args.segment_mib}",
+        flush=True,
+    )
+
+    completed = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
+        futures = {}
+        for index, (start, end) in enumerate(ranges):
+            segment = segment_dir / f"{index:06d}-{start}-{end}.bin"
+            future = pool.submit(
+                download_range,
+                download_url,
+                segment,
+                start,
+                end,
+                args.max_attempts,
+                args.chunk_mib * 1024 * 1024,
+            )
+            futures[future] = (index, start, end)
+        for future in concurrent.futures.as_completed(futures):
+            future.result()
+            completed += 1
+            if completed == len(ranges) or completed % max(1, args.workers) == 0:
+                print(
+                    f"Completed {completed}/{len(ranges)} ranges "
+                    f"({min(total, completed * segment_bytes) / total:.1%})",
+                    flush=True,
+                )
+
+    assembled = target.with_name(f".{target.name}.assembling")
+    with assembled.open("wb") as output:
+        for index, (start, end) in enumerate(ranges):
+            segment = segment_dir / f"{index:06d}-{start}-{end}.bin"
+            with segment.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+                    output.write(chunk)
+    if assembled.stat().st_size != total:
+        raise IOError(f"assembled archive size mismatch: {assembled.stat().st_size} != {total}")
+    assembled.replace(target)
+    print(f"Saved dataset to {target} ({total} bytes)", flush=True)
+    return target
+
+
 def download(args: argparse.Namespace) -> Path:
     api_key = os.environ.get("MDC_API_KEY")
     if not api_key:
         raise RuntimeError("MDC_API_KEY is not set")
-    if args.max_attempts < 1 or args.chunk_mib < 1 or args.progress_mib < 1:
+    if (
+        args.max_attempts < 1
+        or args.chunk_mib < 1
+        or args.progress_mib < 1
+        or args.workers < 1
+        or args.segment_mib < 1
+    ):
         raise ValueError("attempt and MiB arguments must be positive")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -97,6 +235,14 @@ def download(args: argparse.Namespace) -> Path:
             if target.is_file():
                 print(f"Archive already exists: {target}", flush=True)
                 return target
+            if args.workers > 1:
+                result = download_parallel(args, download_url, target)
+                if result is not None:
+                    return result
+                print(
+                    "Server does not support HTTP ranges; falling back to serial",
+                    flush=True,
+                )
 
             offset = partial.stat().st_size if partial.is_file() else 0
             headers = {"Range": f"bytes={offset}-"} if offset else {}

@@ -32,7 +32,9 @@ mkdir -p "$DATASET_DIR" "$AUDIT_DIR"
 
 "$PYTHON" scripts/download_mdc_dataset.py \
   --dataset-id "$DATASET_ID" \
-  --output-dir "$DATASET_DIR"
+  --output-dir "$DATASET_DIR" \
+  --workers 8 \
+  --segment-mib 64
 
 mapfile -t ARCHIVES < <(
   find "$DATASET_DIR" -maxdepth 1 -type f \

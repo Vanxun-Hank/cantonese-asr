@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts.download_mdc_dataset import byte_ranges
 from cantonese_asr.common_voice_audit import (
     canonical_text,
     classify_candidate,
@@ -155,3 +156,7 @@ def test_mdc_authorization_failure_is_not_retried() -> None:
         "except (OSError, ValueError, requests.RequestException) as exc:"
     )
     assert permission_handler < retry_handler
+
+
+def test_parallel_downloader_covers_every_byte_once() -> None:
+    assert byte_ranges(10, 4) == [(0, 3), (4, 7), (8, 9)]
