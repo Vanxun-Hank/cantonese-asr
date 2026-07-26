@@ -196,3 +196,13 @@ def test_parallel_range_worker_resumes_partial_segment() -> None:
     text = Path("scripts/download_mdc_dataset.py").read_text(encoding="utf-8")
     assert "request_start = start + offset" in text
     assert '"ab" if offset else "wb"' in text
+
+
+def test_acoustic_review_job_is_diagnostic_only() -> None:
+    text = Path("slurm/audit_common_voice_yue_acoustic.slurm").read_text(
+        encoding="utf-8"
+    )
+    assert "--gres=gpu:1" in text
+    assert "audit_yue_acoustic_sample.py" in text
+    assert "train.py" not in text
+    assert "package_submission" not in text
