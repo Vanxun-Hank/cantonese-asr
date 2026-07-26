@@ -1,0 +1,5 @@
+variant,num_samples,sentence_accuracy_tol2,cer,total_edit_distance,top100_substitution_count,top100_deletion_count,top100_insertion_count,top_error_max_edit_distance,repetition_or_runaway_in_top100,english_related_top_confusions,digit_related_top_confusions,notable_patterns
+fresh-lr2e5-no-spec,1900,0.8605263157894737,0.09801130044045024,2203,818,119,58,7,0,8,0,"Substitutions dominate; 啦→喇 81; deletion 唔 18; no runaway generation in the 100 retained errors"
+fresh-lr2e5-spec,1900,0.8984210526315789,0.07977043199715264,1793,754,77,39,7,0,11,0,"SpecAugment improves both metrics; common variants include 喇↔啦, 冇→无, 咁→噉; no runaway generation"
+round2-lr5e6-no-spec,1900,0.8931578947368422,0.08448636383859055,1899,740,78,68,6,0,8,0,"Substitutions dominate; insertion 啊 31 is unusually frequent; no runaway generation"
+round2-lr5e6-spec,1900,0.9026315789473685,0.07763491569159585,1745,694,77,55,8,0,8,0,"Best public metric; common variants include 啦↔喇, 冇→无, 穿→着; no runaway generation"

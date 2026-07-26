@@ -10,7 +10,7 @@
   "normalized_cer_p50": 0.058824,
   "runner": {
     "runner": "FunASRSenseVoiceRunner",
-    "model_dir": "/home/bolin/cantonese-asr/artifacts/models/SenseVoiceSmall",
+    "model_dir": "$PROJECT_DIR/artifacts/models/SenseVoiceSmall",
     "funasr_version": "1.3.28",
     "device": "cuda:0",
     "language": "auto",

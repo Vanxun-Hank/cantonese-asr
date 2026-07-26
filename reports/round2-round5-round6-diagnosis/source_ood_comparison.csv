@@ -1,0 +1,9 @@
+variant,source,num_samples,sentence_accuracy_tol2,cer,normalization
+Round 2,Common Voice,1000,0.839,0.1464,symmetric_t2s
+Round 2,MDCC,1000,0.896,0.0705,symmetric_t2s
+Round 5,Common Voice,1000,0.447,0.2901,symmetric_t2s
+Round 5,MDCC,1000,0.597,0.1898,symmetric_t2s
+Round 6 fresh Spec,Common Voice,1000,0.858,0.1145,symmetric_t2s
+Round 6 fresh Spec,MDCC,1000,0.899,0.0685,symmetric_t2s
+Round 6 continue Spec,Common Voice,1000,0.867,0.1318,symmetric_t2s
+Round 6 continue Spec,MDCC,1000,0.887,0.0698,symmetric_t2s

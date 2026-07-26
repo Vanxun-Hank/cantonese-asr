@@ -5,10 +5,10 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=64G
 #SBATCH --time=18:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
 set -euo pipefail
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 MANIFEST=artifacts/manifests/round8/official-mdcc73/train.jsonl
 DATA_REPORT=artifacts/manifests/round8/official-mdcc73/data_report.json

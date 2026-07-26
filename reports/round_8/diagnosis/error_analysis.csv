@@ -1,0 +1,5 @@
+﻿experiment_id,public_samples,public_accuracy,public_cer,retained_error_examples,max_edit_distance,median_retained_edit_distance,runaway_or_repetition,invalid_replacement_char,english_in_retained,digit_related_retained,spoken_written_style_mismatch,particle_related_top_ops,top100_substitution,top100_deletion,top100_insertion
+exp001,1900,0.8710526315789474,0.08986964452551498,100,8,4.0,0,0,1,0,6,159,814,101,58
+exp002,1900,0.88,0.08751167860479601,100,8,4.0,0,0,1,0,7,158,771,86,51
+exp003,1900,0.8694736842105263,0.08973617475641767,100,6,4.0,0,0,1,0,11,158,799,85,64
+exp004,1900,0.86,0.1791609200516083,100,221,5.0,11,15,0,0,8,898,777,132,1879

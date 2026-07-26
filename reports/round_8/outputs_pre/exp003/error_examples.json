@@ -1,0 +1,802 @@
+[
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04896课间不要在走廊追逐㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "课间不要在走廊追逐㗎啫",
+    "prediction": "课间唔好喺酒园追续㗎啫",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04953图书馆看书不要吃东西㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "图书馆看书不要吃东西㗎啫",
+    "prediction": "图书馆睇书唔好食嘢㗎啫",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04955早自习先读课文，再默写生字㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先读课文再默写生字㗎",
+    "prediction": "组置集先读放文在麦写生字㗎",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04968早自习先背单词，再做语文练习㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先背单词再做语文练习㗎",
+    "prediction": "组置习仙背单时再做羽纹练习㗎",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04970早自习先背古诗，再默写注释㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先背古诗再默写注释㗎",
+    "prediction": "组置集先背股师再默写注写㗎",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05300签合同要写清违约证据保留要求㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要写清违约证据保留要求㗎啫",
+    "prediction": "积密图要写称维育证据保留要求㗎啫",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05309签合同要写清房屋维修申报流程㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要写清房屋维修申报流程㗎啫",
+    "prediction": "积木图要写称房屋维修申报留情㗎啫",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05824听日聚会你带唔带雨伞。.wav",
+    "scene": "unknown",
+    "reference": "听日聚会你带唔带雨伞",
+    "prediction": "听日再换你大唔大遮",
+    "edit_distance": 6,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04972早自习先背古诗，再做阅读理解㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先背古诗再做阅读理解㗎",
+    "prediction": "组置习仙背股师再做阅读理解㗎",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04981早自习先整理书包，再预习新课㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先整理书包再预习新课㗎",
+    "prediction": "组置杂先整理书包再预杂新货㗎",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04998放学先清桌面，再把椅子摆好㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "放学先清桌面再把椅子摆好㗎啫",
+    "prediction": "放学先升台面再将凳摆好㗎啫",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05001早自习先默写生字，再组词语练习㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先默写生字再组词语练习㗎",
+    "prediction": "早自习先麦写生词再早辞月练习㗎",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05058签合同要注明网络安装责任方㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要注明网络安装责任方㗎啫",
+    "prediction": "签合同要住名网路安中习任方㗎啫",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05070签合同要注明家具清单㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要注明家具清单㗎啫",
+    "prediction": "植物桃要注明加剧清单㗎啫",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05113签合同要写清违约赔偿支付方式㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要写清违约赔偿支付方式㗎啫",
+    "prediction": "签合同要写称唯有培常支付方式㗎啫",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05131签合同要写清违约赔偿㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要写清违约赔偿㗎啫",
+    "prediction": "签合同要写称唯要培上㗎啫",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05230交租要问可唔可以年付减免。.wav",
+    "scene": "unknown",
+    "reference": "交租要问可唔可以年付减免",
+    "prediction": "郊租要问可唔可以连负拣面",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05263入住要检查卧室门锁关唔关得紧㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "入住要检查卧室门锁关唔关得紧㗎喇",
+    "prediction": "入住要检查卧失门窗户均得紧㗎喇",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05303交租要问迟交几天算违约。.wav",
+    "scene": "unknown",
+    "reference": "交租要问迟交几天算违约",
+    "prediction": "胶租要问持胶几日算为约",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05339烫头发想整法式慵懒卷。.wav",
+    "scene": "unknown",
+    "reference": "烫头发想整法式慵懒卷",
+    "prediction": "电头发想整发色拥览卷",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05342染头发要试蜜糖色㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "染头发要试蜜糖色㗎喇",
+    "prediction": "验头发要示密堂式㗎喇",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05403做美甲想贴水钻装饰。.wav",
+    "scene": "unknown",
+    "reference": "做美甲想贴水钻装饰",
+    "prediction": "仲未夹相贴水转装饰",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05422染头发想试焦糖棕色。.wav",
+    "scene": "unknown",
+    "reference": "染头发想试焦糖棕色",
+    "prediction": "染头发相视焦同中式",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05424烫头发想整法式慵懒卷。.wav",
+    "scene": "unknown",
+    "reference": "烫头发想整法式慵懒卷",
+    "prediction": "电头发想整发色拥览卷",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05434烫头发想整短发摩根烫。.wav",
+    "scene": "unknown",
+    "reference": "烫头发想整短发摩根烫",
+    "prediction": "电糖发想整短发磨羹汤",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05443做美甲想整手绘花朵款。.wav",
+    "scene": "unknown",
+    "reference": "做美甲想整手绘花朵款",
+    "prediction": "仲未夹上整手攰花朵款",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05478做美甲想贴立体蝴蝶结饰。.wav",
+    "scene": "unknown",
+    "reference": "做美甲想贴立体蝴蝶结饰",
+    "prediction": "做未夹相选立体蝴蝶结式",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05680呢条巷去主路系唔系经辅道。.wav",
+    "scene": "unknown",
+    "reference": "呢条巷去主路系唔系经辅道",
+    "prediction": "呢条项去煮炉系唔系京阔道",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05820下次聚会想试日式料理。.wav",
+    "scene": "unknown",
+    "reference": "下次聚会想试日式料理",
+    "prediction": "下次再会详试日识了你",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06170佢帮我撑伞我心里好暖㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "佢帮我撑伞我心里好暖㗎啫",
+    "prediction": "佢帮我担遮我心里好遮",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06215睇到旧录像我好怀念㗎。.wav",
+    "scene": "unknown",
+    "reference": "睇到旧录像我好怀念㗎",
+    "prediction": "睇到够度都怀念㗎",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06328今日返工好忙，晏啲先复你讯息。.wav",
+    "scene": "unknown",
+    "reference": "今日返工好忙晏啲先复你讯息",
+    "prediction": "今天上工好忙晏啲支复利信息",
+    "edit_distance": 5,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04857语文课先分析段落，再总结中心㗎。.wav",
+    "scene": "unknown",
+    "reference": "语文课先分析段落再总结中心㗎",
+    "prediction": "羽民课先分析断落再种结中心㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04885早自习先背英语课文，再默写句子㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先背英语课文再默写句子㗎",
+    "prediction": "组置集先配英语课文再默写句子㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04897图书馆不要折书页角㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "图书馆不要折书页角㗎啫",
+    "prediction": "图书馆唔好接书业角㗎啫",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04907课间不要在走廊玩球类游戏㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "课间不要在走廊玩球类游戏㗎啫",
+    "prediction": "课间唔好喺走廊玩球类游戏嘅啫",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04964早自习先默写单词，再背语法规则㗎。.wav",
+    "scene": "unknown",
+    "reference": "早自习先默写单词再背语法规则㗎",
+    "prediction": "组置杂先陌写单词再背语法规则㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04974考试前先整理错题，再复习薄弱点㗎。.wav",
+    "scene": "unknown",
+    "reference": "考试前先整理错题再复习薄弱点㗎",
+    "prediction": "校四前先整理错题再复杂薄药点㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04978上科学课要带采集标本盒㗎。.wav",
+    "scene": "unknown",
+    "reference": "上科学课要带采集标本盒㗎",
+    "prediction": "想科学课要带彩杂表本盒㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04988语文课背完古诗要默写检查㗎。.wav",
+    "scene": "unknown",
+    "reference": "语文课背完古诗要默写检查㗎",
+    "prediction": "乳文课报完股息要默写检查㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04992运动会接力赛要接稳棒再跑㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "运动会接力赛要接稳棒再跑㗎喇",
+    "prediction": "运动会节力菜越接稳棒才跑㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04997语文课先分析文章结构，再总结主旨㗎。.wav",
+    "scene": "unknown",
+    "reference": "语文课先分析文章结构再总结主旨㗎",
+    "prediction": "乳民课先分析文章结构在总结主子㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05087签合同要注明家具维修范围㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要注明家具维修范围㗎啫",
+    "prediction": "签合同要署名加剧维修范围㗎啫",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05100睇楼要问能不能养宠物。.wav",
+    "scene": "unknown",
+    "reference": "睇楼要问能不能养宠物",
+    "prediction": "睇楼要问可唔可以养宠物",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05117退租要检查电器开关灵唔灵敏。.wav",
+    "scene": "unknown",
+    "reference": "退租要检查电器开关灵唔灵敏",
+    "prediction": "退租要检查电器开关零零问",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05133睇楼要问近唔近菜市场。.wav",
+    "scene": "unknown",
+    "reference": "睇楼要问近唔近菜市场",
+    "prediction": "太楼要问近菜市场近菜市场",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05146入住要检查卫生间瓷砖有冇松动㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "入住要检查卫生间瓷砖有冇松动㗎喇",
+    "prediction": "入住要检查被新间池砖有冇松冻㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05253签合同要注明燃气费缴纳周期㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "签合同要注明燃气费缴纳周期㗎啫",
+    "prediction": "签合同要注明延续肺缴捺周期㗎啫",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05267交租要问清付款方式。.wav",
+    "scene": "unknown",
+    "reference": "交租要问清付款方式",
+    "prediction": "郊租要问称付款东西",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05281入住要检查门锁钥匙灵唔灵敏㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "入住要检查门锁钥匙灵唔灵敏㗎喇",
+    "prediction": "入住要检查门锁钥匙零零蚊㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05347染头发想试灰紫色。.wav",
+    "scene": "unknown",
+    "reference": "染头发想试灰紫色",
+    "prediction": "验头发上肆灰纸色",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05374烫头发想整法式大卷。.wav",
+    "scene": "unknown",
+    "reference": "烫头发想整法式大卷",
+    "prediction": "电脑发想整发式带卷",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05382染头发想试橙棕色。.wav",
+    "scene": "unknown",
+    "reference": "染头发想试橙棕色",
+    "prediction": "验头发相试橙中式",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05392染头发要试粉紫色㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "染头发要试粉紫色㗎喇",
+    "prediction": "验头发要示粉智饰㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05397染头发想试青棕色。.wav",
+    "scene": "unknown",
+    "reference": "染头发想试青棕色",
+    "prediction": "现头发相试青中式",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05445做面膜想选舒缓修护款。.wav",
+    "scene": "unknown",
+    "reference": "做面膜想选舒缓修护款",
+    "prediction": "做面目想拣输缓收护款",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05447染头发想试深灰色。.wav",
+    "scene": "unknown",
+    "reference": "染头发想试深灰色",
+    "prediction": "验头发相视心灰色",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05463剪刘海要留弧形唔要直㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "剪刘海要留弧形唔要直㗎喇",
+    "prediction": "剪楼壳要留户形唔好直㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05467染头发要试粉棕色㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "染头发要试粉棕色㗎喇",
+    "prediction": "验头发要示粉中式㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05484烫头发想整短发法式烫。.wav",
+    "scene": "unknown",
+    "reference": "烫头发想整短发法式烫",
+    "prediction": "短头发想整短发发熄汗",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05543呢度去火车站有冇 taxi。.wav",
+    "scene": "unknown",
+    "reference": "呢度去火车站有冇taxi",
+    "prediction": "呢度去火车站有冇的士",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05547去超市要行过座天桥㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "去超市要行过座天桥㗎喇",
+    "prediction": "去超市以下午过咗天桥㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05554呢条巷去主路系唔系好易找。.wav",
+    "scene": "unknown",
+    "reference": "呢条巷去主路系唔系好易找",
+    "prediction": "呢条项去煮炉系唔系好易揾",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05617呢条巷去主路要行几耐。.wav",
+    "scene": "unknown",
+    "reference": "呢条巷去主路要行几耐",
+    "prediction": "呢条项去煮炉要行几耐啊",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05638呢条巷去主路系唔系好难找。.wav",
+    "scene": "unknown",
+    "reference": "呢条巷去主路系唔系好难找",
+    "prediction": "呢条汗去煮炉系唔系好难找啊",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05659呢条巷去主路系唔系经天桥。.wav",
+    "scene": "unknown",
+    "reference": "呢条巷去主路系唔系经天桥",
+    "prediction": "呢条汉去煮炉系唔系京天桥",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05732聚会完去饮茶倾计㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "聚会完去饮茶倾计㗎喇",
+    "prediction": "聚会完去饮茶聊天啦",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05752聚会完送你到地铁站㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "聚会完送你到地铁站㗎喇",
+    "prediction": "追护完送你到的地站㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05874听日聚会你带唔带雨伞以防落雨。.wav",
+    "scene": "unknown",
+    "reference": "听日聚会你带唔带雨伞以防落雨",
+    "prediction": "听日聚会你带唔带遮二房落雨",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05903约会想一齐去买情侣衫咩。.wav",
+    "scene": "unknown",
+    "reference": "约会想一齐去买情侣衫咩",
+    "prediction": "约会上一齐去买程旅餐咩",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05917听日有雨记得带雨褛㗎。.wav",
+    "scene": "unknown",
+    "reference": "听日有雨记得带雨褛㗎",
+    "prediction": "听日有雨几大大雨嬲㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/05921呢对新鞋约会时想着住去。.wav",
+    "scene": "unknown",
+    "reference": "呢对新鞋约会时想着住去",
+    "prediction": "呢对身鞋又会时常着着去",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06106佢终于肯认错我好欣慰㗎喇！.wav",
+    "scene": "unknown",
+    "reference": "佢终于肯认错我好欣慰㗎喇",
+    "prediction": "佢终于肯认创好人畏㗎喇",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06167被人称赞我面都红埋㗎。.wav",
+    "scene": "unknown",
+    "reference": "被人称赞我面都红埋㗎",
+    "prediction": "俾人称赞个面都好卖㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06188赶咗末班车我松一口气。.wav",
+    "scene": "unknown",
+    "reference": "赶咗末班车我松一口气",
+    "prediction": "赶咗门搬车我送口气",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06192被人夸奖我面都红晒㗎。.wav",
+    "scene": "unknown",
+    "reference": "被人夸奖我面都红晒㗎",
+    "prediction": "俾人跨掌个面都红晒㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06217被人赞美我面红到耳仔㗎。.wav",
+    "scene": "unknown",
+    "reference": "被人赞美我面红到耳仔㗎",
+    "prediction": "俾人赞尾我面行度耳仔㗎",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06223吃到奶奶整嘅饼我好感动。.wav",
+    "scene": "unknown",
+    "reference": "吃到奶奶整嘅饼我好感动",
+    "prediction": "食到麻麻整嘅饼我好感动啊",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06366唔该借张纸巾用下，我流鼻水。.wav",
+    "scene": "unknown",
+    "reference": "唔该借张纸巾用下我流鼻水",
+    "prediction": "唔该借张纸巾溶下我留秘数",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06393系咪真㗎？听住唔似真㖞。.wav",
+    "scene": "unknown",
+    "reference": "系咪真㗎听住唔似真㖞",
+    "prediction": "是咪真假听住唔知真喔",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06466冇问题，你随时 call 我就得。.wav",
+    "scene": "unknown",
+    "reference": "冇问题你随时call我就得",
+    "prediction": "冇问题你随时抗我就得",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06470做咩咁迟起？唔知要返工咩？.wav",
+    "scene": "unknown",
+    "reference": "做咩咁迟起唔知要返工咩",
+    "prediction": "准咩咁慈喜唔知要返高咩",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06499唔使惊，有问题就 call 我啦。.wav",
+    "scene": "unknown",
+    "reference": "唔使惊有问题就call我啦",
+    "prediction": "唔使惊有问题就拷我啦",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06569呢个新 APP 几好用，你试过未啊？.wav",
+    "scene": "unknown",
+    "reference": "呢个新APP几好用你试过未啊",
+    "prediction": "呢个新app嘅好用你试过未啊",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06585最近食咗间面铺，汤底几好饮。.wav",
+    "scene": "unknown",
+    "reference": "最近食咗间面铺汤底几好饮",
+    "prediction": "最近食咗加面葡萄汤汤底几好饮",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06712你钟意养金鱼定系鹦鹉鱼啊？.wav",
+    "scene": "unknown",
+    "reference": "你钟意养金鱼定系鹦鹉鱼啊",
+    "prediction": "你中要养金鱼定系应帽鱼啊",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06766可唔可以借把伞我，外面落紧雨。.wav",
+    "scene": "unknown",
+    "reference": "可唔可以借把伞我外面落紧雨",
+    "prediction": "可唔可以借白遮我出面落紧雨啊",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06826可唔可以借个胶袋我，装下垃圾。.wav",
+    "scene": "unknown",
+    "reference": "可唔可以借个胶袋我装下垃圾",
+    "prediction": "可唔可以直接交代我装下垃圾",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06829可唔可以帮我搬下呢张梳化，要吸尘。.wav",
+    "scene": "unknown",
+    "reference": "可唔可以帮我搬下呢张梳化要吸尘",
+    "prediction": "可唔可以帮我搬下呢张沙发啊要吸尘啊",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/06870唔该借个订书机我，要订下文件。.wav",
+    "scene": "unknown",
+    "reference": "唔该借个订书机我要订下文件",
+    "prediction": "唔该只个拎书机我我要拎下文件",
+    "edit_distance": 4,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04860体育课跳远比要穿运动裤㗎。.wav",
+    "scene": "unknown",
+    "reference": "体育课跳远比要穿运动裤㗎",
+    "prediction": "体育课跳软要着运动裤㗎",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04866考试前先复习公式，再做应用题㗎。.wav",
+    "scene": "unknown",
+    "reference": "考试前先复习公式再做应用题㗎",
+    "prediction": "考试前先复杂公式最早应用题㗎",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04878值日扫完地要倒垃圾再擦黑板㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "值日扫完地要倒垃圾再擦黑板㗎啫",
+    "prediction": "即日扫完地要堵垃圾再抹黑板㗎啫",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04882数学课要带计算器同草稿纸㗎。.wav",
+    "scene": "unknown",
+    "reference": "数学课要带计算器同草稿纸㗎",
+    "prediction": "数学课要带计算机同组故纸㗎",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04891值日要擦好黑板摆好桌椅㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "值日要擦好黑板摆好桌椅㗎啫",
+    "prediction": "直日要擦好黑板摆好台凳㗎啫",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04906图书馆看书不要随意走动㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "图书馆看书不要随意走动㗎啫",
+    "prediction": "图书馆睇书唔好随意走动㗎啫",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04911数学课先听例题，再做练习题㗎。.wav",
+    "scene": "unknown",
+    "reference": "数学课先听例题再做练习题㗎",
+    "prediction": "数学课先听礼题最早练习题㗎",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04921课间不要在教室玩追逐游戏㗎啫。.wav",
+    "scene": "unknown",
+    "reference": "课间不要在教室玩追逐游戏㗎啫",
+    "prediction": "课间唔好喺教室玩追逐游戏㗎啫",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04924语文课先背课文，再默写段落㗎。.wav",
+    "scene": "unknown",
+    "reference": "语文课先背课文再默写段落㗎",
+    "prediction": "羽民课先背课文在默写段落㗎",
+    "edit_distance": 3,
+    "within_tol2": false
+  },
+  {
+    "audio_path": "/home/sym/whisper/dongguan_dialect_asr/cantonese_corpus_jnu_wu/录音20251129/4856-7500/04928考试时不要偷看他人答案㗎。.wav",
+    "scene": "unknown",
+    "reference": "考试时不要偷看他人答案㗎",
+    "prediction": "考试时唔好偷睇他人答案㗎",
+    "edit_distance": 3,
+    "within_tol2": false
+  }
+]

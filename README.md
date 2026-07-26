@@ -11,6 +11,21 @@
 - 根据固定验证集选择 checkpoint，并使用独立 OOD 数据诊断泛化能力。
 - 生成根目录平铺、只包含一个 `model.safetensors` 的离线提交包。
 
+## 当前算法进度
+
+截至 2026-07-26，当前最佳为 Round 8 `EXP004 / Round 2 exact`，平台分数
+`63.02`。该模型使用 Official + Common Voice + MDCC 的互补数据组合进行
+Whisper-small Full SFT。完整实验复盘、失败路线、数据审计结论和下一阶段
+单变量实验见
+[算法交接文档](docs/ALGORITHM_HANDOFF_2026-07-26.md)。
+
+可公开查看的证据：
+
+- [Round 8 canonical report](reports/round_8/report.html)
+- [Round 8 因果诊断](reports/round_8/diagnosis/report.html)
+- [Round 2/5/6 退步复盘](reports/round2-round5-round6-diagnosis/diagnosis.md)
+- [Common Voice 26 yue 准入审计](reports/common_voice_26_yue_admission_audit/report.html)
+
 ## 数据格式
 
 训练 manifest 的核心字段如下：

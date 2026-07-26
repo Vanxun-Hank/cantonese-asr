@@ -1,5 +1,7 @@
 __pycache__/
 *.py[cod]
+.DS_Store
+.venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -8,5 +10,6 @@ artifacts/
 outputs/
 logs/
 reports/**/.DS_Store
+submissions/
 tmp/
 .worktrees/

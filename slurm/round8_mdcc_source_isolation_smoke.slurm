@@ -5,10 +5,10 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=02:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
 set -euo pipefail
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 MANIFEST=artifacts/manifests/round8/official-mdcc73/smoke32.jsonl
 RUN_DIR=outputs/round8-mdcc-source-isolation/smoke32

@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=24:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
 set -euo pipefail
 
@@ -21,7 +21,7 @@ if [[ -z "${MDC_API_KEY:-}" ]]; then
   exit 1
 fi
 
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 DATASET_ID="cmqinjd7x00vynq07pwzo3lmp"
 DATASET_DIR="artifacts/datasets/external/common_voice_26_yue"

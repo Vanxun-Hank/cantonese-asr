@@ -2,7 +2,7 @@
   "provenance": {
     "dataset_id": "cmqinjd7x00vynq07pwzo3lmp",
     "locale": "yue",
-    "archive": "/home/bolin/cantonese-asr/artifacts/datasets/external/common_voice_26_yue/common-voice-scripted-speech-26-0-canton-3bc2b1fd.tar.gz",
+    "archive": "$PROJECT_DIR/artifacts/datasets/external/common_voice_26_yue/common-voice-scripted-speech-26-0-canton-3bc2b1fd.tar.gz",
     "archive_bytes": 6432913774,
     "archive_sha256": "5402520cf421b9d124d5eee82fc7f7ac17efcd697af82ad869802fbee6704884",
     "archive_root": "cv-corpus-26.0-2026-06-12/yue",
@@ -460,7 +460,7 @@
     "normalized_cer_p50": 0.058824,
     "runner": {
       "runner": "FunASRSenseVoiceRunner",
-      "model_dir": "/home/bolin/cantonese-asr/artifacts/models/SenseVoiceSmall",
+      "model_dir": "$PROJECT_DIR/artifacts/models/SenseVoiceSmall",
       "funasr_version": "1.3.28",
       "device": "cuda:0",
       "language": "auto",

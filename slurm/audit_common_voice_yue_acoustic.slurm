@@ -5,10 +5,10 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=02:00:00
-#SBATCH --output=/home/bolin/cantonese-asr/logs/%x-%j.out
+#SBATCH --output=logs/%x-%j.out
 
 set -euo pipefail
-source /home/bolin/cantonese-asr/slurm/common.sh
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 AUDIT_DIR="artifacts/audits/common_voice_26_yue_vs_zh_hk/v1"
 SENSEVOICE_MODEL="artifacts/models/SenseVoiceSmall"

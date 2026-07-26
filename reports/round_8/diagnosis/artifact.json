@@ -1,0 +1,559 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Round 8 粤语 ASR 实验复盘与因果诊断",
+    "description": "以 Round 2 exact（EXP004）为唯一基线，对 Round 8 数据源消融、训练曲线、错误类型、OOD 泛化与平台结果进行复盘。",
+    "generatedAt": "2026-07-26T09:20:14+08:00",
+    "sources": [
+      {
+        "id": "experiment_comparison",
+        "label": "Round 8 实验对比",
+        "path": "reports/round_8/diagnosis/experiment_comparison.csv",
+        "query": {
+          "language": "sql",
+          "engine": "duckdb",
+          "description": "读取 Round 8 实验级训练数据构成、validation、public、固定 OOD 与平台结果；报告中的卡片、图和表只对这些已复核行做透视和差值计算。",
+          "sql": "SELECT * FROM read_csv_auto('reports/round_8/diagnosis/experiment_comparison.csv', header = true);",
+          "tables_used": [
+            "reports/round_8/diagnosis/experiment_comparison.csv"
+          ],
+          "filters": [
+            "Round 8 exp001-exp004",
+            "EXP004 is the only baseline",
+            "No train-probe or OOD metric used for checkpoint selection"
+          ],
+          "metric_definitions": [
+            "sentence_accuracy_tol2 = count(character edit distance <= 2) / number of utterances after official normalization",
+            "CER = total character edit distance / total normalized reference characters",
+            "OOD accuracy uses fixed CV and MDCC diagnostic panels and never participates in model selection",
+            "Platform delta = EXP002 platform score - EXP004 platform score"
+          ]
+        }
+      },
+      {
+        "id": "training_curves",
+        "label": "Round 8 训练曲线",
+        "path": "reports/round_8/diagnosis/training_curves.csv",
+        "query": {
+          "language": "sql",
+          "engine": "duckdb",
+          "description": "读取按实验、epoch 去重后的 train loss、validation loss、句准确率、CER 与学习率。",
+          "sql": "SELECT * FROM read_csv_auto('reports/round_8/diagnosis/training_curves.csv', header = true);",
+          "tables_used": [
+            "reports/round_8/diagnosis/training_curves.csv"
+          ]
+        }
+      },
+      {
+        "id": "error_analysis",
+        "label": "Round 8 错误类型汇总",
+        "path": "reports/round_8/diagnosis/error_analysis.csv",
+        "query": {
+          "language": "sql",
+          "engine": "duckdb",
+          "description": "读取各实验公开评测错误样例与字符混淆统计的汇总。",
+          "sql": "SELECT * FROM read_csv_auto('reports/round_8/diagnosis/error_analysis.csv', header = true);",
+          "tables_used": [
+            "reports/round_8/diagnosis/error_analysis.csv"
+          ]
+        }
+      },
+      {
+        "id": "platform_round8",
+        "label": "Round 8 平台成绩截图",
+        "path": "reports/round_8/diagnosis/source_evidence/platform_round8.png"
+      },
+      {
+        "id": "server_configs_logs",
+        "label": "Round 8 服务器配置、checkpoint 选择、metrics 与 Slurm 日志",
+        "path": "reports/round_8/diagnosis/source_evidence/server"
+      },
+      {
+        "id": "prior_round_diagnosis",
+        "label": "Round 2、Round 5、Round 6 退步诊断",
+        "path": "reports/round2-round5-round6-diagnosis/diagnosis.md"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# Round 8 粤语 ASR 实验复盘与因果诊断"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "body": "## 执行摘要\nRound 2 exact（EXP004）在平台得到 **63.02**，比只使用 official + MDCC 57% 的 EXP002 高 **9.36 分**。两者的优化器、学习率、scheduler、effective batch、epoch 数和 Whisper-small 基座一致，而 EXP002 的官方 validation/public 指标并没有同步恶化。最强的伴随信号来自固定 OOD：EXP002 的 Common Voice OOD 准确率从基线的 85.6% 降至 55.3%，合并 OOD 从 86.9% 降至 72.3%。因此，当前最可能原因是单一外部数据源造成域专化和跨来源泛化退化，而不是学习率失控、SpecAugment 或继续训练策略。\n\n结论强度为“高概率、尚待平台单变量验证”。平台每个权重会派生不同抽样种子，单次分数不是完全配对的 A/B；但 9.36 分平台差距、14.6 个百分点合并 OOD 差距和相同训练配置共同支持这一归因。"
+      },
+      {
+        "id": "headline_metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "baseline_platform",
+          "mdcc57_platform",
+          "combined_ood_gap",
+          "cv_ood_gap"
+        ]
+      },
+      {
+        "id": "cross_round_review",
+        "type": "markdown",
+        "body": "## 跨轮次复盘\n- **Round 2**：official 6,292 + CV 8,451 + MDCC 8,561，3 epochs、无速度增强、无 SpecAugment；平台 62.69。Round 8 的 exact rerun 得到 63.02，说明这条基线可复现。\n- **Round 5**：只使用 official 的 0.9/1.0/1.1 三个固定速度视图，共 18,876 条；去掉全部外部数据，同时 scheduler 也改为 linear。固定合并 OOD 从 Round 2 的 86.75% 降至 52.20%。它证明“无外部数据”会伤害跨域能力，但不能单独归因给速度增强，因为至少三个变量同时变化。\n- **Round 6 fresh / continue**：官方三速度视图 18,876 + 与 Round 2 相同的外部样本 17,012，external 占比由 73.0% 降至 47.4%，并加入轻度 SpecAugment、最多 8 epochs。fresh 与从 Round 2 checkpoint 继续训练的平台都约 56，但固定合并 OOD 分别为 87.85% 与 87.70%。因此 fresh/continue 不是主要分水岭，SpecAugment 也没有本地退化证据；更可疑的是来源权重、长训练以及平台未覆盖域/抽样差异。\n- **Round 8**：去掉速度增强、SpecAugment、长训练和初始化差异，只做数据源消融。Round 2 exact 得到 63.02，而 MDCC57 得到 53.66。它是目前最强的受控证据，说明“外部源互补覆盖”比“单纯增加 MDCC 数量”更重要。"
+      },
+      {
+        "id": "what_happened",
+        "type": "markdown",
+        "body": "## 发生了什么\n- **EXP004 / Round 2 exact**：official 6,292 + Common Voice 8,451 + MDCC 8,561，共 23,304 条；平台 **63.02**。\n- **EXP002 / official + MDCC 57%**：official 6,292 + MDCC 8,451，共 14,743 条；平台 **53.66**。\n- EXP002 的 public sentence_accuracy_tol2 为 88.0%，反而高于 EXP004 的 86.0%；固定 official validation 只低 1.28 个百分点。因此，本地官方同域指标没有预警平台大幅下降。\n- EXP001 把样本总数恢复到与基线相同的 23,304 条，但全部外部样本来自 MDCC；其 Common Voice OOD 仍降至 57.0%。这排除了“仅仅因为 EXP002 数据更少”这一主要解释。\n- EXP003 只加入 Common Voice 时，MDCC OOD 降至 71.7%。两个单一外部源都会专化，平衡的 CV + MDCC 组合才同时保持两个域。"
+      },
+      {
+        "id": "ood_section",
+        "type": "markdown",
+        "body": "## 固定 OOD 泛化证据\n下图使用固定、永不参与选模的 Common Voice 与 MDCC OOD 面板。它回答的是“模型是否同时保留两个外部录音/标注域的能力”，不是 checkpoint 选择标准。"
+      },
+      {
+        "id": "ood_chart_block",
+        "type": "chart",
+        "chartId": "ood_accuracy"
+      },
+      {
+        "id": "why",
+        "type": "markdown",
+        "body": "## 为什么\n### 主要原因：外部数据源单一导致域专化\nEXP001 与 EXP004 训练样本总数相同、训练超参数相同，唯一关键差异是外部数据构成。EXP001 的 MDCC OOD 比基线高 3.8 个百分点，但 CV OOD 低 28.6 个百分点；这是一种清晰的“对一个域更好、对另一个域更差”的专化模式。EXP002 也复现了同一方向。\n\n### 次要现象：epoch 2 后有轻微过拟合，但不足以解释平台跌幅\n四组的 train loss 都持续下降，而 validation loss 多在 epoch 2 附近触底、epoch 3 轻微回升。这是轻微过拟合，但基线 EXP004 也有同样走势，且仍取得最高平台分。因此它是后续可优化项，不是 9.36 分退步的主因。\n\n### 独立问题：EXP004 的公开集存在 225-token 重复生成\nEXP004 公开评测保留错误中有 11 个明显重复循环，并出现 15 个替换字符异常，导致 public CER 被抬高至 17.92%。平台仍以 63.02 领先，说明该解码问题不是 EXP002 跌分的原因；但它可能是一个可单独修复的额外上限。"
+      },
+      {
+        "id": "evidence",
+        "type": "markdown",
+        "body": "## 证据是什么\n1. **控制变量一致**：四组均为 fresh Whisper-small Full SFT、AdamW、learning rate 2e-5、cosine scheduler、effective batch 16、weight decay 0.01、warmup 0.05、最多 3 epochs，且无 SpecAugment。\n2. **同样本量对照**：EXP001 与 EXP004 都是 23,304 条；MDCC-only 外部组成仍导致 CV OOD 从 85.6% 降至 57.0%。\n3. **同外部数量对照**：EXP002 与 EXP003 都是 official 6,292 + external 8,451；把外部源从 MDCC 换成 CV 后，CV OOD 上升 29.5 个百分点，而 MDCC OOD下降 17.6 个百分点。\n4. **错误类型**：EXP001–003 的普通错误主要是替换，包括粤语助词/字形变体（啦/喇、咁/噉、冇/无）、同音近音字和书面/口语标注差异；英文和数字错误极少。没有证据表明英文夹杂或数字是本轮平台退步主因。\n5. **优化稳定性**：干净运行未出现 NaN/Inf。EXP002 曾在 epoch 3 验证后的 train-probe 阶段遇到 CUDA illegal memory，并从 epoch 2 checkpoint 恢复；这是次要混杂因素，但 EXP001 在干净运行中也表现出相同 OOD 专化，因此不能解释主要结论。\n6. **评测一致性**：本轮 standalone v2 提交已修复仓库内模块依赖，EXP002 与 EXP004 均在平台成功运行。generation max length 225 和官方文本归一化保持一致；因此 53.66 不是打包失败造成的。"
+      },
+      {
+        "id": "experiment_table_section",
+        "type": "markdown",
+        "body": "## 实验对比表\n所有百分比均为固定证据面板或平台一次提交的快照。平台分数由于权重派生抽样种子而存在抽样不确定性，不能单独承担因果判断。"
+      },
+      {
+        "id": "experiment_table_block",
+        "type": "table",
+        "tableId": "experiments"
+      },
+      {
+        "id": "three_experiments",
+        "type": "markdown",
+        "body": "## 三个单变量验证实验（按优先级）\n### 1. 提交现有 EXP001：固定总样本量，只替换数据源构成\n**假设**：Round 2 exact 的优势来自 CV + MDCC 的互补覆盖，而不是训练样本总量。  \n**改动**：不训练；提交现有 EXP001。它与 EXP004 都有 23,304 条、相同训练配置，但把 CV 8,451 + MDCC 8,561 换成 MDCC 17,012。  \n**预期信号**：EXP001 平台显著低于 63.02，且固定 CV OOD 维持约 57%，确认 MDCC 主导损害隐藏域泛化。  \n**失败信号**：EXP001 平台接近或高于 63.02；这会削弱“源构成是主因”的判断，并提高平台抽样差异或 EXP002 恢复流程的解释权重。\n\n### 2. 提交现有 EXP003：固定外部数量，只替换 MDCC 为 Common Voice\n**假设**：隐藏集更接近 CV/多域条件，因此 CV-only 比 MDCC-only 更稳，但仍不如两源平衡。  \n**改动**：不训练；提交现有 EXP003。它与 EXP002 都是 14,743 条、相同训练配置，唯一主要变量是外部源由 MDCC 8,451 换为 CV 8,451。  \n**预期信号**：平台高于 EXP002 的 53.66，但低于 EXP004 的 63.02。  \n**失败信号**：不高于 53.66；说明单一来源身份不足以解释平台差异，需优先调查平台抽样或训练恢复混杂。\n\n### 3. EXP004 解码重复保护：保持权重不变，只加 no_repeat_ngram_size=2\n**假设**：公开集 225-token 循环是独立、可避免的解码故障，消除它能降低 CER 而不损伤普通粤语输出。  \n**改动**：不训练权重；仅在 EXP004 推理中加入 `no_repeat_ngram_size=2`，其余生成参数完全不变。  \n**预期信号**：公开集 runaway 11→0，CER 从 17.92% 明显下降，sentence_accuracy_tol2 不下降超过 0.3 个百分点；随后平台高于 63.02。  \n**失败信号**：正常短句被抑制、句准确率下降超过 0.3 个百分点，或平台不高于 63.02。"
+      },
+      {
+        "id": "next_only",
+        "type": "markdown",
+        "body": "## 下一轮只推荐一个实验\n**优先提交现有 EXP001，不启动新训练。** 它是当前最干净、成本最低的因果检验：总样本数、训练步数和全部超参数与唯一基线 EXP004 对齐，只改变外部数据源构成。先得到这一条平台证据，再决定是否提交 EXP003；在此之前不要同时改数据比例、SpecAugment、learning rate、epoch 或 checkpoint 起点。"
+      },
+      {
+        "id": "round_contract",
+        "type": "markdown",
+        "body": "## 后续每轮固定输出契约\n每轮报告固定回答四项，顺序不变：  \n1. **发生了什么**：相对唯一基线的指标和行为变化。  \n2. **为什么**：只陈述有证据支持的主要解释，并标注不确定性。  \n3. **证据是什么**：配置差异、训练曲线、官方 validation、固定 OOD、错误类型和平台结果。  \n4. **下一轮只推荐一个实验**：明确单一变量、通过信号和失败信号。  \n\n任何额外想法进入候选清单，不在同一轮并发混入主实验。"
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "body": "## 限制与解释边界\n- 平台从权重内容派生抽样种子，不同权重看到的 200 条隐藏样本可能不同；63.02 与 53.66 不是严格配对检验。\n- public 参考文本包含部分书面语/口语口径差异，因此 public accuracy/CER 只作诊断，不能替代固定 official validation 或平台结果。\n- 训练曲线使用 epoch 当时的在线评测记录；表格与选模结论使用 checkpoint_selection.json 的 checkpoint 重评结果。两者有小幅差异时，以后者为选模权威证据。\n- EXP002 有一次恢复训练流程；报告把它列为次要混杂因素，没有把它当作主要原因。\n- EXP001 与 EXP003 尚无平台分数，因此前三个实验中的前两项是利用现有权重补齐因果证据，不涉及新训练。"
+      }
+    ],
+    "cards": [
+      {
+        "id": "baseline_platform",
+        "description": "EXP004 / Round 2 exact standalone v2。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "EXP004",
+            "field": "baseline_platform",
+            "format": "number"
+          }
+        ],
+        "sourceId": "experiment_comparison"
+      },
+      {
+        "id": "mdcc57_platform",
+        "description": "EXP002；其平台成绩比唯一基线低 9.36 分。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "EXP002",
+            "field": "mdcc57_platform",
+            "format": "number"
+          },
+          {
+            "label": "对基线",
+            "field": "platform_delta",
+            "format": "number",
+            "signed": true
+          }
+        ],
+        "sourceId": "experiment_comparison"
+      },
+      {
+        "id": "combined_ood_gap",
+        "description": "EXP002 相对 EXP004 的固定 CV+MDCC OOD 句准确率变化。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "百分点",
+            "field": "combined_ood_delta_pp",
+            "format": "number",
+            "signed": true
+          }
+        ],
+        "sourceId": "experiment_comparison"
+      },
+      {
+        "id": "cv_ood_gap",
+        "description": "EXP002 相对 EXP004 的固定 Common Voice OOD 句准确率变化。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "百分点",
+            "field": "cv_ood_delta_pp",
+            "format": "number",
+            "signed": true
+          }
+        ],
+        "sourceId": "experiment_comparison"
+      }
+    ],
+    "charts": [
+      {
+        "id": "ood_accuracy",
+        "title": "固定 OOD 句准确率",
+        "subtitle": "EXP004 在 Common Voice 与 MDCC 两个来源上同时保持较高覆盖；单一来源训练产生明显专化。",
+        "type": "bar",
+        "intent": "comparison",
+        "question": "不同外部数据源组合如何影响 Common Voice、MDCC 与合并 OOD 句准确率？",
+        "rationale": "分组柱状图适合比较四个离散实验在三个固定 OOD 面板上的准确率。",
+        "dataset": "ood_accuracy",
+        "encodings": {
+          "x": {
+            "field": "experiment"
+          },
+          "y": {
+            "field": "accuracy_pct"
+          },
+          "color": {
+            "field": "surface"
+          }
+        },
+        "options": {
+          "grouping": "grouped"
+        },
+        "palette": {
+          "kind": "categorical"
+        },
+        "legend": {
+          "position": "bottom",
+          "title": "OOD 面板"
+        },
+        "sourceId": "experiment_comparison"
+      }
+    ],
+    "tables": [
+      {
+        "id": "experiments",
+        "title": "Round 8 数据源消融与结果",
+        "dataset": "experiments",
+        "columns": [
+          {
+            "field": "experiment",
+            "label": "实验"
+          },
+          {
+            "field": "data_mix",
+            "label": "训练数据"
+          },
+          {
+            "field": "validation_accuracy_pct",
+            "label": "Validation Acc (%)",
+            "format": "number"
+          },
+          {
+            "field": "public_accuracy_pct",
+            "label": "Public Acc (%)",
+            "format": "number"
+          },
+          {
+            "field": "combined_ood_accuracy_pct",
+            "label": "Combined OOD Acc (%)",
+            "format": "number"
+          },
+          {
+            "field": "platform_score",
+            "label": "平台分数",
+            "format": "number"
+          }
+        ],
+        "defaultSort": {
+          "field": "platform_score",
+          "direction": "desc"
+        },
+        "sourceId": "experiment_comparison"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "status": "ready",
+    "generatedAt": "2026-07-26T09:20:14+08:00",
+    "datasets": {
+      "headline": [
+        {
+          "baseline_platform": 63.02,
+          "mdcc57_platform": 53.66,
+          "platform_delta": -9.36,
+          "combined_ood_delta_pp": -14.6,
+          "cv_ood_delta_pp": -30.3
+        }
+      ],
+      "ood_accuracy": [
+        {
+          "experiment": "EXP001 MDCC73",
+          "surface": "CV OOD",
+          "accuracy_pct": 57.0,
+          "training_rows": 23304,
+          "official_rows": 6292,
+          "cv_rows": 0,
+          "mdcc_rows": 17012,
+          "platform_score": null
+        },
+        {
+          "experiment": "EXP001 MDCC73",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 92.0,
+          "training_rows": 23304,
+          "official_rows": 6292,
+          "cv_rows": 0,
+          "mdcc_rows": 17012,
+          "platform_score": null
+        },
+        {
+          "experiment": "EXP001 MDCC73",
+          "surface": "Combined OOD",
+          "accuracy_pct": 74.5,
+          "training_rows": 23304,
+          "official_rows": 6292,
+          "cv_rows": 0,
+          "mdcc_rows": 17012,
+          "platform_score": null
+        },
+        {
+          "experiment": "EXP002 MDCC57",
+          "surface": "CV OOD",
+          "accuracy_pct": 55.3,
+          "training_rows": 14743,
+          "official_rows": 6292,
+          "cv_rows": 0,
+          "mdcc_rows": 8451,
+          "platform_score": 53.66
+        },
+        {
+          "experiment": "EXP002 MDCC57",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 89.3,
+          "training_rows": 14743,
+          "official_rows": 6292,
+          "cv_rows": 0,
+          "mdcc_rows": 8451,
+          "platform_score": 53.66
+        },
+        {
+          "experiment": "EXP002 MDCC57",
+          "surface": "Combined OOD",
+          "accuracy_pct": 72.3,
+          "training_rows": 14743,
+          "official_rows": 6292,
+          "cv_rows": 0,
+          "mdcc_rows": 8451,
+          "platform_score": 53.66
+        },
+        {
+          "experiment": "EXP003 CV57",
+          "surface": "CV OOD",
+          "accuracy_pct": 84.8,
+          "training_rows": 14743,
+          "official_rows": 6292,
+          "cv_rows": 8451,
+          "mdcc_rows": 0,
+          "platform_score": null
+        },
+        {
+          "experiment": "EXP003 CV57",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 71.7,
+          "training_rows": 14743,
+          "official_rows": 6292,
+          "cv_rows": 8451,
+          "mdcc_rows": 0,
+          "platform_score": null
+        },
+        {
+          "experiment": "EXP003 CV57",
+          "surface": "Combined OOD",
+          "accuracy_pct": 78.25,
+          "training_rows": 14743,
+          "official_rows": 6292,
+          "cv_rows": 8451,
+          "mdcc_rows": 0,
+          "platform_score": null
+        },
+        {
+          "experiment": "EXP004 Round2 exact",
+          "surface": "CV OOD",
+          "accuracy_pct": 85.6,
+          "training_rows": 23304,
+          "official_rows": 6292,
+          "cv_rows": 8451,
+          "mdcc_rows": 8561,
+          "platform_score": 63.02
+        },
+        {
+          "experiment": "EXP004 Round2 exact",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 88.2,
+          "training_rows": 23304,
+          "official_rows": 6292,
+          "cv_rows": 8451,
+          "mdcc_rows": 8561,
+          "platform_score": 63.02
+        },
+        {
+          "experiment": "EXP004 Round2 exact",
+          "surface": "Combined OOD",
+          "accuracy_pct": 86.9,
+          "training_rows": 23304,
+          "official_rows": 6292,
+          "cv_rows": 8451,
+          "mdcc_rows": 8561,
+          "platform_score": 63.02
+        }
+      ],
+      "experiments": [
+        {
+          "experiment": "EXP004 Round2 exact",
+          "data_mix": "official 6,292 + CV 8,451 + MDCC 8,561",
+          "training_rows": 23304,
+          "validation_accuracy_pct": 83.90,
+          "validation_cer_pct": 9.33,
+          "public_accuracy_pct": 86.00,
+          "public_cer_pct": 17.92,
+          "combined_ood_accuracy_pct": 86.90,
+          "platform_score": 63.02
+        },
+        {
+          "experiment": "EXP002 MDCC57",
+          "data_mix": "official 6,292 + MDCC 8,451",
+          "training_rows": 14743,
+          "validation_accuracy_pct": 82.62,
+          "validation_cer_pct": 9.03,
+          "public_accuracy_pct": 88.00,
+          "public_cer_pct": 8.75,
+          "combined_ood_accuracy_pct": 72.30,
+          "platform_score": 53.66
+        },
+        {
+          "experiment": "EXP001 MDCC73",
+          "data_mix": "official 6,292 + MDCC 17,012",
+          "training_rows": 23304,
+          "validation_accuracy_pct": 82.76,
+          "validation_cer_pct": 9.31,
+          "public_accuracy_pct": 87.11,
+          "public_cer_pct": 8.99,
+          "combined_ood_accuracy_pct": 74.50,
+          "platform_score": null
+        },
+        {
+          "experiment": "EXP003 CV57",
+          "data_mix": "official 6,292 + CV 8,451",
+          "training_rows": 14743,
+          "validation_accuracy_pct": 83.05,
+          "validation_cer_pct": 9.33,
+          "public_accuracy_pct": 86.95,
+          "public_cer_pct": 8.97,
+          "combined_ood_accuracy_pct": 78.25,
+          "platform_score": null
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "experiment_comparison",
+      "label": "Round 8 实验对比",
+      "path": "reports/round_8/diagnosis/experiment_comparison.csv",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "description": "读取 Round 8 实验级训练数据构成、validation、public、固定 OOD 与平台结果；报告中的卡片、图和表只对这些已复核行做透视和差值计算。",
+        "sql": "SELECT * FROM read_csv_auto('reports/round_8/diagnosis/experiment_comparison.csv', header = true);",
+        "tables_used": [
+          "reports/round_8/diagnosis/experiment_comparison.csv"
+        ],
+        "filters": [
+          "Round 8 exp001-exp004",
+          "EXP004 is the only baseline",
+          "No train-probe or OOD metric used for checkpoint selection"
+        ],
+        "metric_definitions": [
+          "sentence_accuracy_tol2 = count(character edit distance <= 2) / number of utterances after official normalization",
+          "CER = total character edit distance / total normalized reference characters",
+          "OOD accuracy uses fixed CV and MDCC diagnostic panels and never participates in model selection",
+          "Platform delta = EXP002 platform score - EXP004 platform score"
+        ]
+      }
+    },
+    {
+      "id": "training_curves",
+      "label": "Round 8 训练曲线",
+      "path": "reports/round_8/diagnosis/training_curves.csv",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "description": "读取按实验、epoch 去重后的 train loss、validation loss、句准确率、CER 与学习率。",
+        "sql": "SELECT * FROM read_csv_auto('reports/round_8/diagnosis/training_curves.csv', header = true);",
+        "tables_used": [
+          "reports/round_8/diagnosis/training_curves.csv"
+        ]
+      }
+    },
+    {
+      "id": "error_analysis",
+      "label": "Round 8 错误类型汇总",
+      "path": "reports/round_8/diagnosis/error_analysis.csv",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "description": "读取各实验公开评测错误样例与字符混淆统计的汇总。",
+        "sql": "SELECT * FROM read_csv_auto('reports/round_8/diagnosis/error_analysis.csv', header = true);",
+        "tables_used": [
+          "reports/round_8/diagnosis/error_analysis.csv"
+        ]
+      }
+    },
+    {
+      "id": "platform_round8",
+      "label": "Round 8 平台成绩截图",
+      "path": "reports/round_8/diagnosis/source_evidence/platform_round8.png"
+    },
+    {
+      "id": "server_configs_logs",
+      "label": "Round 8 服务器配置、checkpoint 选择、metrics 与 Slurm 日志",
+      "path": "reports/round_8/diagnosis/source_evidence/server"
+    },
+    {
+      "id": "prior_round_diagnosis",
+      "label": "Round 2、Round 5、Round 6 退步诊断",
+      "path": "reports/round2-round5-round6-diagnosis/diagnosis.md"
+    }
+  ],
+  "package_info": {
+    "artifact_type": "technical_report",
+    "audience": "Cantonese ASR competition team",
+    "scope": "Round 8 source-ablation diagnosis; no new training"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "num_samples": 1900,
+  "total_edit_distance": 2017,
+  "cer": 0.08973617475641767,
+  "char_accuracy_approx": 0.9102638252435823,
+  "sentence_accuracy_tol2": 0.8694736842105263,
+  "sentence_accuracy_exact": 0.42526315789473684,
+  "tolerance": 2
+}
