@@ -146,3 +146,12 @@ def test_slurm_audit_is_cpu_only_and_fixed_dataset() -> None:
     assert "scripts/audit_common_voice_yue.py" in text
     assert "train.py" not in text
     assert "set -a" in text
+
+
+def test_mdc_authorization_failure_is_not_retried() -> None:
+    text = Path("scripts/download_mdc_dataset.py").read_text(encoding="utf-8")
+    permission_handler = text.index("except PermissionError:")
+    retry_handler = text.index(
+        "except (OSError, ValueError, requests.RequestException) as exc:"
+    )
+    assert permission_handler < retry_handler

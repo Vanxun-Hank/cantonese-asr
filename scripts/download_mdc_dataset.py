@@ -139,6 +139,10 @@ def download(args: argparse.Namespace) -> Path:
             partial.replace(target)
             print(f"Saved dataset to {target} ({downloaded} bytes)", flush=True)
             return target
+        except PermissionError:
+            # Dataset terms are an external authorization gate. Retrying cannot
+            # change that state and only wastes the audit allocation.
+            raise
         except (OSError, ValueError, requests.RequestException) as exc:
             last_error = exc
             if attempt == args.max_attempts:
