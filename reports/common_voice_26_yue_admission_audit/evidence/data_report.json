@@ -1,0 +1,473 @@
+{
+  "provenance": {
+    "dataset_id": "cmqinjd7x00vynq07pwzo3lmp",
+    "locale": "yue",
+    "archive": "/home/bolin/cantonese-asr/artifacts/datasets/external/common_voice_26_yue/common-voice-scripted-speech-26-0-canton-3bc2b1fd.tar.gz",
+    "archive_bytes": 6432913774,
+    "archive_sha256": "5402520cf421b9d124d5eee82fc7f7ac17efcd697af82ad869802fbee6704884",
+    "archive_root": "cv-corpus-26.0-2026-06-12/yue",
+    "seed": 42,
+    "training_runs_started": 0,
+    "platform_submissions": 0
+  },
+  "split_profiles": [
+    {
+      "split": "train",
+      "rows": 7420,
+      "unique_audio_paths": 7420,
+      "unique_transcripts": 7420,
+      "unique_canonical_sentences": 7418,
+      "speakers": 99,
+      "hours": 8.292350000000065,
+      "duration_s": {
+        "min": 1.656,
+        "p25": 3.06,
+        "p50": 3.636,
+        "p75": 4.608,
+        "p95": 6.768,
+        "max": 15.228
+      },
+      "top1_speaker_share": 0.06617250673854447,
+      "top10_speaker_share": 0.4811320754716981
+    },
+    {
+      "split": "dev",
+      "rows": 5130,
+      "unique_audio_paths": 5130,
+      "unique_transcripts": 5130,
+      "unique_canonical_sentences": 5128,
+      "speakers": 179,
+      "hours": 6.172030000000008,
+      "duration_s": {
+        "min": 1.62,
+        "p25": 3.312,
+        "p50": 3.996,
+        "p75": 5.04,
+        "p95": 7.056,
+        "max": 15.48
+      },
+      "top1_speaker_share": 0.016569200779727095,
+      "top10_speaker_share": 0.14269005847953217
+    },
+    {
+      "split": "test",
+      "rows": 5130,
+      "unique_audio_paths": 5130,
+      "unique_transcripts": 5130,
+      "unique_canonical_sentences": 5129,
+      "speakers": 804,
+      "hours": 6.629949999999977,
+      "duration_s": {
+        "min": 1.692,
+        "p25": 3.6,
+        "p50": 4.356,
+        "p75": 5.4,
+        "p95": 7.524,
+        "max": 13.824
+      },
+      "top1_speaker_share": 0.0044834307992202725,
+      "top10_speaker_share": 0.038011695906432746
+    },
+    {
+      "split": "validated",
+      "rows": 191477,
+      "unique_audio_paths": 191477,
+      "unique_transcripts": 17680,
+      "unique_canonical_sentences": 17663,
+      "speakers": 1092,
+      "hours": 204.01976000005618,
+      "duration_s": {
+        "min": 1.188,
+        "p25": 2.916,
+        "p50": 3.528,
+        "p75": 4.428,
+        "p95": 6.372,
+        "max": 15.588
+      },
+      "top1_speaker_share": 0.04393216939893564,
+      "top10_speaker_share": 0.35386495505987664
+    },
+    {
+      "split": "other",
+      "rows": 79793,
+      "unique_audio_paths": 79793,
+      "unique_transcripts": 12226,
+      "unique_canonical_sentences": 12221,
+      "speakers": 525,
+      "hours": 93.08407000001174,
+      "duration_s": {
+        "min": 0.18,
+        "p25": 3.06,
+        "p50": 3.816,
+        "p75": 4.896,
+        "p95": 7.38,
+        "max": 15.516
+      },
+      "top1_speaker_share": 0.08760166931936385,
+      "top10_speaker_share": 0.6664870352035893
+    },
+    {
+      "split": "invalidated",
+      "rows": 8096,
+      "unique_audio_paths": 8096,
+      "unique_transcripts": 5443,
+      "unique_canonical_sentences": 5442,
+      "speakers": 579,
+      "hours": 10.3106099999999,
+      "duration_s": {
+        "min": 0.684,
+        "p25": 3.348,
+        "p50": 4.248,
+        "p75": 5.436,
+        "p95": 7.812,
+        "max": 24.768
+      },
+      "top1_speaker_share": 0.06669960474308301,
+      "top10_speaker_share": 0.3663537549407115
+    }
+  ],
+  "overlaps": {
+    "mdcc_test": {
+      "reference": "mdcc_test",
+      "candidate_rows": 7420,
+      "reference_rows": 11037,
+      "audio_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "pcm_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "clean_transcript_overlap": {
+        "count": 1,
+        "rate": 0.00013477088948787063
+      },
+      "canonical_sentence_overlap": {
+        "count": 1,
+        "rate": 0.00013477088948787063
+      },
+      "audio_transcript_pair_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "speaker_row_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "same_sentence_new_audio": {
+        "count": 1,
+        "rate": 0.00013477088948787063
+      }
+    },
+    "mdcc_train": {
+      "reference": "mdcc_train",
+      "candidate_rows": 7420,
+      "reference_rows": 64779,
+      "audio_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "pcm_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "clean_transcript_overlap": {
+        "count": 7,
+        "rate": 0.0009433962264150943
+      },
+      "canonical_sentence_overlap": {
+        "count": 11,
+        "rate": 0.0014824797843665768
+      },
+      "audio_transcript_pair_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "speaker_row_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "same_sentence_new_audio": {
+        "count": 11,
+        "rate": 0.0014824797843665768
+      }
+    },
+    "mdcc_validation": {
+      "reference": "mdcc_validation",
+      "candidate_rows": 7420,
+      "reference_rows": 5038,
+      "audio_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "pcm_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "clean_transcript_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "canonical_sentence_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "audio_transcript_pair_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "speaker_row_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "same_sentence_new_audio": {
+        "count": 0,
+        "rate": 0.0
+      }
+    },
+    "official_train": {
+      "reference": "official_train",
+      "candidate_rows": 7420,
+      "reference_rows": 6292,
+      "audio_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "pcm_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "clean_transcript_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "canonical_sentence_overlap": {
+        "count": 7,
+        "rate": 0.0009433962264150943
+      },
+      "audio_transcript_pair_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "speaker_row_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "same_sentence_new_audio": {
+        "count": 7,
+        "rate": 0.0009433962264150943
+      }
+    },
+    "zh_hk_dev": {
+      "reference": "zh_hk_dev",
+      "candidate_rows": 7420,
+      "reference_rows": 5552,
+      "audio_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "pcm_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "clean_transcript_overlap": {
+        "count": 2,
+        "rate": 0.00026954177897574127
+      },
+      "canonical_sentence_overlap": {
+        "count": 2,
+        "rate": 0.00026954177897574127
+      },
+      "audio_transcript_pair_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "speaker_row_overlap": {
+        "count": 440,
+        "rate": 0.05929919137466307
+      },
+      "same_sentence_new_audio": {
+        "count": 2,
+        "rate": 0.00026954177897574127
+      }
+    },
+    "zh_hk_test": {
+      "reference": "zh_hk_test",
+      "candidate_rows": 7420,
+      "reference_rows": 5550,
+      "audio_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "pcm_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "clean_transcript_overlap": {
+        "count": 5,
+        "rate": 0.0006738544474393531
+      },
+      "canonical_sentence_overlap": {
+        "count": 5,
+        "rate": 0.0006738544474393531
+      },
+      "audio_transcript_pair_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "speaker_row_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "same_sentence_new_audio": {
+        "count": 5,
+        "rate": 0.0006738544474393531
+      }
+    },
+    "zh_hk_train": {
+      "reference": "zh_hk_train",
+      "candidate_rows": 7420,
+      "reference_rows": 8451,
+      "audio_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "pcm_sha256_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "clean_transcript_overlap": {
+        "count": 5,
+        "rate": 0.0006738544474393531
+      },
+      "canonical_sentence_overlap": {
+        "count": 9,
+        "rate": 0.0012129380053908356
+      },
+      "audio_transcript_pair_overlap": {
+        "count": 0,
+        "rate": 0.0
+      },
+      "speaker_row_overlap": {
+        "count": 150,
+        "rate": 0.02021563342318059
+      },
+      "same_sentence_new_audio": {
+        "count": 9,
+        "rate": 0.0012129380053908356
+      }
+    }
+  },
+  "quality": {
+    "input_train": 7420,
+    "accepted": 7418,
+    "quarantine": 2,
+    "quarantine_reasons": {
+      "protected_text_overlap": 2
+    }
+  },
+  "incremental": {
+    "retention_rate": 0.9997304582210242,
+    "new_utterances": 7418,
+    "new_speakers": 87,
+    "new_hours": 8.291010000000066,
+    "sample_yue_rate": 0.9956331877729258,
+    "raw_protected_text_overlap": 2,
+    "raw_protected_audio_overlap": 0,
+    "protected_text_overlap": 0,
+    "protected_audio_overlap": 0,
+    "top10_speaker_share": 0.4811320754716981,
+    "incremental_coverage": true
+  },
+  "admission": {
+    "decision": "reject",
+    "gates": [
+      {
+        "name": "retention_rate",
+        "observed": 0.9997304582210242,
+        "operator": ">=",
+        "threshold": 0.8,
+        "passed": true
+      },
+      {
+        "name": "new_utterances",
+        "observed": 7418,
+        "operator": ">=",
+        "threshold": 1000,
+        "passed": true
+      },
+      {
+        "name": "new_speakers",
+        "observed": 87,
+        "operator": ">=",
+        "threshold": 100,
+        "passed": false
+      },
+      {
+        "name": "new_hours",
+        "observed": 8.291010000000066,
+        "operator": ">=",
+        "threshold": 3.0,
+        "passed": true
+      },
+      {
+        "name": "sample_yue_rate",
+        "observed": 0.9956331877729258,
+        "operator": ">=",
+        "threshold": 0.85,
+        "passed": true
+      },
+      {
+        "name": "protected_text_overlap",
+        "observed": 0,
+        "operator": "==",
+        "threshold": 0,
+        "passed": true
+      },
+      {
+        "name": "protected_audio_overlap",
+        "observed": 0,
+        "operator": "==",
+        "threshold": 0,
+        "passed": true
+      },
+      {
+        "name": "top10_speaker_share",
+        "observed": 0.4811320754716981,
+        "operator": "<",
+        "threshold": 0.5,
+        "passed": true
+      },
+      {
+        "name": "incremental_coverage",
+        "observed": true,
+        "operator": "==",
+        "threshold": true,
+        "passed": true
+      }
+    ]
+  },
+  "acoustic_review": {
+    "sample_rows": 229,
+    "decoded_rows": 229,
+    "languages": {
+      "ko": 1,
+      "yue": 228
+    },
+    "sample_yue_rate": 0.9956331877729258,
+    "normalized_cer_mean": 0.08805582969432312,
+    "normalized_cer_p50": 0.058824,
+    "runner": {
+      "runner": "FunASRSenseVoiceRunner",
+      "model_dir": "/home/bolin/cantonese-asr/artifacts/models/SenseVoiceSmall",
+      "funasr_version": "1.3.28",
+      "device": "cuda:0",
+      "language": "auto",
+      "use_itn": false,
+      "parser": "language tag from raw <|...|> output; rich postprocessor for text"
+    },
+    "training_runs_started": 0,
+    "platform_submissions": 0
+  }
+}

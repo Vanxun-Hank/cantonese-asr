@@ -1,0 +1,11 @@
+{
+  "dataset_id": "cmqinjd7x00vynq07pwzo3lmp",
+  "locale": "yue",
+  "archive": "/home/bolin/cantonese-asr/artifacts/datasets/external/common_voice_26_yue/common-voice-scripted-speech-26-0-canton-3bc2b1fd.tar.gz",
+  "archive_bytes": 6432913774,
+  "archive_sha256": "5402520cf421b9d124d5eee82fc7f7ac17efcd697af82ad869802fbee6704884",
+  "archive_root": "cv-corpus-26.0-2026-06-12/yue",
+  "seed": 42,
+  "training_runs_started": 0,
+  "platform_submissions": 0
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><title>Common Voice yue admission audit</title>
+<style>body{font-family:system-ui;max-width:1100px;margin:2rem auto;line-height:1.5}
+table{border-collapse:collapse;width:100%;margin:1rem 0}th,td{border:1px solid #ccc;padding:.45rem}
+code,pre{background:#f5f5f5;padding:.2rem}</style>
+<h1>Common Voice 26.0 Cantonese (`yue`) 数据准入审计</h1>
+<p><b>Decision:</b> reject</p>
+<p>本报告只审计数据；训练作业 0，平台提交 0。</p>
+<h2>Provenance</h2><pre>{
+  &quot;dataset_id&quot;: &quot;cmqinjd7x00vynq07pwzo3lmp&quot;,
+  &quot;locale&quot;: &quot;yue&quot;,
+  &quot;archive&quot;: &quot;/home/bolin/cantonese-asr/artifacts/datasets/external/common_voice_26_yue/common-voice-scripted-speech-26-0-canton-3bc2b1fd.tar.gz&quot;,
+  &quot;archive_bytes&quot;: 6432913774,
+  &quot;archive_sha256&quot;: &quot;5402520cf421b9d124d5eee82fc7f7ac17efcd697af82ad869802fbee6704884&quot;,
+  &quot;archive_root&quot;: &quot;cv-corpus-26.0-2026-06-12/yue&quot;,
+  &quot;seed&quot;: 42,
+  &quot;training_runs_started&quot;: 0,
+  &quot;platform_submissions&quot;: 0
+}</pre>
+<h2>Split profile</h2><table><tr><th>split</th><th>rows</th><th>speakers</th><th>hours</th><th>top10 speaker share</th></tr><tr><td>train</td><td>7420</td><td>99</td><td>8.292350000000065</td><td>0.4811320754716981</td></tr><tr><td>dev</td><td>5130</td><td>179</td><td>6.172030000000008</td><td>0.14269005847953217</td></tr><tr><td>test</td><td>5130</td><td>804</td><td>6.629949999999977</td><td>0.038011695906432746</td></tr><tr><td>validated</td><td>191477</td><td>1092</td><td>204.01976000005618</td><td>0.35386495505987664</td></tr><tr><td>other</td><td>79793</td><td>525</td><td>93.08407000001174</td><td>0.6664870352035893</td></tr><tr><td>invalidated</td><td>8096</td><td>579</td><td>10.3106099999999</td><td>0.3663537549407115</td></tr></table>
+<h2>Overlap</h2><table><tr><th>reference</th><th>canonical sentence</th><th>audio bytes</th><th>speaker rows</th></tr><tr><td>mdcc_test</td><td>1</td><td>0</td><td>0</td></tr><tr><td>mdcc_train</td><td>11</td><td>0</td><td>0</td></tr><tr><td>mdcc_validation</td><td>0</td><td>0</td><td>0</td></tr><tr><td>official_train</td><td>7</td><td>0</td><td>0</td></tr><tr><td>zh_hk_dev</td><td>2</td><td>0</td><td>440</td></tr><tr><td>zh_hk_test</td><td>5</td><td>0</td><td>0</td></tr><tr><td>zh_hk_train</td><td>9</td><td>0</td><td>150</td></tr></table>
+<h2>Admission gates</h2><table><tr><th>gate</th><th>observed</th><th>threshold</th><th>result</th></tr><tr><td>retention_rate</td><td>0.9997304582210242</td><td>&gt;= 0.8</td><td>PASS</td></tr><tr><td>new_utterances</td><td>7418</td><td>&gt;= 1000</td><td>PASS</td></tr><tr><td>new_speakers</td><td>87</td><td>&gt;= 100</td><td>FAIL/PENDING</td></tr><tr><td>new_hours</td><td>8.291010000000066</td><td>&gt;= 3.0</td><td>PASS</td></tr><tr><td>sample_yue_rate</td><td>0.9956331877729258</td><td>&gt;= 0.85</td><td>PASS</td></tr><tr><td>protected_text_overlap</td><td>0</td><td>== 0</td><td>PASS</td></tr><tr><td>protected_audio_overlap</td><td>0</td><td>== 0</td><td>PASS</td></tr><tr><td>top10_speaker_share</td><td>0.4811320754716981</td><td>&lt; 0.5</td><td>PASS</td></tr><tr><td>incremental_coverage</td><td>True</td><td>== True</td><td>PASS</td></tr></table>
+<h2>Next step</h2><p>完成固定 acoustic review 后才可作最终准入判断；在此之前不训练。</p>
+</html>

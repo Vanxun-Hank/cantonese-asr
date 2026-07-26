@@ -1,0 +1,643 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Common Voice 26 yue 准入审计与下一阶段研究路线",
+    "description": "以 EXP004 / Round 2 exact 为唯一基线，审计 Common Voice 26 Cantonese（yue）的新增覆盖、泄漏、说话人集中度与语言纯度，并据此规划下一阶段单变量实验。",
+    "generatedAt": "2026-07-26T16:30:00+08:00",
+    "sources": [
+      {
+        "id": "yue_audit",
+        "label": "Common Voice 26 yue 审计总报告",
+        "path": "reports/common_voice_26_yue_admission_audit/evidence/data_report.json",
+        "query": {
+          "language": "sql",
+          "engine": "duckdb",
+          "description": "读取 yue 各 split、质量、增量覆盖、准入门槛与声学抽样结果。",
+          "sql": "SELECT * FROM read_json_auto('reports/common_voice_26_yue_admission_audit/evidence/data_report.json');",
+          "tables_used": [
+            "reports/common_voice_26_yue_admission_audit/evidence/data_report.json"
+          ],
+          "filters": [
+            "Candidate split: Common Voice 26 yue train only",
+            "Common Voice yue dev/test remain OOD and never enter training",
+            "Protected validation/test text or audio overlaps are quarantined",
+            "Seed 42"
+          ],
+          "metric_definitions": [
+            "retention_rate = accepted train rows / candidate train rows",
+            "new_speakers = candidate train speakers absent from the existing EXP004 Common Voice speaker inventory",
+            "sample_yue_rate = SenseVoice language-tagged yue rows / decoded deterministic audit sample",
+            "top10_speaker_share = candidate train rows contributed by the ten largest speakers / all candidate train rows"
+          ]
+        }
+      },
+      {
+        "id": "yue_overlap",
+        "label": "Common Voice 26 yue 重复与泄漏审计",
+        "path": "reports/common_voice_26_yue_admission_audit/evidence/overlap_summary.json",
+        "query": {
+          "language": "sql",
+          "engine": "duckdb",
+          "description": "读取 yue train 与 Official、CV zh-HK、MDCC train/validation/test 的音频、文本与说话人重叠。",
+          "sql": "SELECT * FROM read_json_auto('reports/common_voice_26_yue_admission_audit/evidence/overlap_summary.json');",
+          "tables_used": [
+            "reports/common_voice_26_yue_admission_audit/evidence/overlap_summary.json"
+          ],
+          "metric_definitions": [
+            "canonical sentence overlap removes punctuation, whitespace and script variants before exact comparison",
+            "audio overlap requires an exact archive-byte or decoded-PCM SHA-256 match"
+          ]
+        }
+      },
+      {
+        "id": "yue_acoustic",
+        "label": "Common Voice 26 yue 固定声学抽样诊断",
+        "path": "reports/common_voice_26_yue_admission_audit/evidence/acoustic_summary.json",
+        "query": {
+          "language": "sql",
+          "engine": "duckdb",
+          "description": "读取按说话人覆盖的固定 229 条 SenseVoice 诊断样本。",
+          "sql": "SELECT * FROM read_json_auto('reports/common_voice_26_yue_admission_audit/evidence/acoustic_summary.json');",
+          "tables_used": [
+            "reports/common_voice_26_yue_admission_audit/evidence/acoustic_summary.json"
+          ],
+          "filters": [
+            "Diagnostic sample only; SenseVoice output is not ground truth",
+            "No sample was used for training or checkpoint selection"
+          ]
+        }
+      },
+      {
+        "id": "round8_diagnosis",
+        "label": "Round 8 数据源消融诊断",
+        "path": "reports/round_8/diagnosis/artifact.json",
+        "query": {
+          "language": "sql",
+          "engine": "duckdb",
+          "description": "读取 Round 8 EXP001–EXP004 的数据构成、固定 OOD 与平台结果。",
+          "sql": "SELECT * FROM read_json_auto('reports/round_8/diagnosis/artifact.json');",
+          "tables_used": [
+            "reports/round_8/diagnosis/artifact.json"
+          ],
+          "filters": [
+            "EXP004 / Round 2 exact is the only baseline",
+            "OOD metrics are diagnostic and never used for checkpoint selection"
+          ]
+        }
+      },
+      {
+        "id": "mdc_yue",
+        "label": "Mozilla Data Collective: Common Voice Scripted Speech 26.0 — Cantonese",
+        "href": "https://mozilladatacollective.com/datasets/cmqinjd7x00vynq07pwzo3lmp"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# Common Voice 26 yue 准入审计与下一阶段研究路线"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "body": "## 执行结论\n**不建议现在把完整 yue train 加入 EXP004，也不启动相关训练。** 数据本身质量较好：7,420 条中 7,418 条通过清洗，新增 8.29 小时，固定声学样本粤语率 99.56%，与 Official、CV zh-HK、MDCC 没有任何精确音频重叠。但它没有通过预先登记的说话人覆盖门槛：相对 EXP004 仅新增 87 位说话人，低于 100；同时 Top 10 说话人贡献 48.11% 的训练句子，距离 50% 上限很近。\n\nRound 8 的最强结论仍然成立：**CV 与 MDCC 的互补覆盖比单纯增加某一来源的行数更重要。** EXP004 的平台分 63.02 和双域 OOD 平衡是目前唯一可靠基线。把一个说话人较集中的新 CV 子集直接叠加进去，更可能改变来源/说话人权重，而不是明显扩展泛化覆盖。\n\n本阶段已完成数据审计，训练作业数为 0，平台提交数为 0。"
+      },
+      {
+        "id": "headline_metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "baseline_score",
+          "accepted_rows",
+          "new_speakers",
+          "sample_yue",
+          "speaker_concentration"
+        ]
+      },
+      {
+        "id": "overall_judgment",
+        "type": "markdown",
+        "body": "## 对当前所有实验的总体判断\n1. **EXP004 / Round 2 exact 是唯一基线。** Official 6,292 + CV zh-HK 8,451 + MDCC 8,561，在相同 Whisper-small Full SFT 配置下取得平台 63.02。\n2. **后续退步的主要原因不是“数据越多越差”，而是来源和说话人权重失衡。** MDCC-only 会显著损害 CV OOD，CV-only 会损害 MDCC OOD；两源平衡才同时保持两个域。\n3. **Round 5 与 Round 6 不能归因给某一个增强。** 它们同时改变了速度视图、外部数据比例、SpecAugment、训练时长或初始化，缺少单变量识别力。\n4. **本地同域 validation 对平台隐藏集的解释力有限。** EXP002 的 official validation 只比 EXP004 低 1.28 个百分点，但平台低 9.36 分；固定跨源 OOD 更早暴露了域专化。\n5. **解码重复是独立上限。** EXP004 公开评测中有 11 个 225-token 重复循环；它不是数据源退步的原因，但可能是在不训练权重的情况下最值得先修的缺陷。"
+      },
+      {
+        "id": "round8_ood_intro",
+        "type": "markdown",
+        "body": "## Round 8 的核心因果证据\n下图只作跨域诊断，不参与选模。单一外部来源会在对应域上变好、在另一域上显著变差；EXP004 的 CV + MDCC 组合最平衡。"
+      },
+      {
+        "id": "round8_ood_chart_block",
+        "type": "chart",
+        "chartId": "round8_ood"
+      },
+      {
+        "id": "biggest_unknown",
+        "type": "markdown",
+        "body": "## 当前最大的未知数\n**平台 200 条隐藏样本的域构成，以及 EXP004 的 225-token 重复生成对平台分数的真实影响有多大。** 不同提交权重会派生不同抽样种子，因此平台分并非严格配对；同时 official validation、公开集和固定 OOD 都不能完整代表隐藏域。当前证据可以判断“数据源互补重要”，但还不能判断继续增加相似 CV 句子是否比修复解码重复更有收益。\n\n这也指出了原思路中的偏差：数据集页面上的行数、总小时数或全库说话人数不能直接代表 **train split 对现有基线的增量覆盖**。Common Voice yue 全库规模很大，但实际可直接加入的 train split 只有 99 位说话人，相对 EXP004 新增 87 位；若只看 7,420 条，会高估它的泛化价值。"
+      },
+      {
+        "id": "candidate_data",
+        "type": "markdown",
+        "body": "## Common Voice 26 yue 是否值得纳入\n**完整 train：暂不值得，结论为 reject。** 这不是说数据差，而是说它没有达到本轮事先锁定的训练准入条件。九项门槛中八项通过，唯一失败项是新增说话人 87 < 100。不能在看到结果后把门槛改成 80，否则会把验证标准变成追随结果的规则。\n\n值得保留的资产有三类：\n- 7,418 条通过 QC 的音频—粤语文本样本，可作为以后经过说话人平衡的候选池；\n- yue dev/test，可加入固定 OOD 面板，但永远不进入训练；\n- validated pool 的更大说话人覆盖，可另做 CPU 数据审计，不能未经同等泄漏、许可和质量检查直接训练。\n\n如果未来正式修改准入规则，必须在新实验前书面锁定新门槛和抽样方式，并把“说话人平衡子集”作为独立变量，而不是事后挑数据。"
+      },
+      {
+        "id": "admission_table_block",
+        "type": "table",
+        "tableId": "admission_gates"
+      },
+      {
+        "id": "overlap_intro",
+        "type": "markdown",
+        "body": "## 重复与泄漏\n所有被检查来源的精确音频和解码 PCM 重叠均为 0。规范化句子重叠也很低；与受保护的 validation/test 文本重叠的两条候选已隔离，清洗后受保护文本和音频重叠均为 0。"
+      },
+      {
+        "id": "overlap_chart_block",
+        "type": "chart",
+        "chartId": "overlap_counts"
+      },
+      {
+        "id": "unique_next",
+        "type": "markdown",
+        "body": "## 下一步唯一推荐执行的实验\n**EXP004 权重不变，只加入重复生成保护。**\n\n- **假设**：公开集观察到的 11 个 225-token 循环是独立解码故障；消除循环可以降低 CER，并且不破坏正常短句。\n- **唯一改动**：以 EXP004 standalone v2 为基线，只在生成参数中加入 `no_repeat_ngram_size=2`；模型权重、数据、beam、max length 225、语言提示、文本规范化和打包协议全部不变。\n- **先验收后提交**：在固定 official validation 和公开自测上比较；不得用平台分反复搜索参数。\n- **预期信号**：runaway 11→0，public CER 显著下降，official validation `sentence_accuracy_tol2` 下降不超过 0.3 个百分点，CER 不退化。\n- **失败信号**：正常粤语重复词被误抑制，句准确率下降超过 0.3 个百分点，或 CER 变差；出现任一项就放弃，不提交。\n\n这是当前最高信息收益/最低 GPU 成本的实验。它直接针对已观察到的错误，而且不会把 yue 数据、速度增强或训练超参数混成新的组合。"
+      },
+      {
+        "id": "top5_intro",
+        "type": "markdown",
+        "body": "## 当前最值得投入资源的 Top 5 方向\n排序同时考虑超过 63.02 的概率、因果识别力、GPU 成本和每天 5 次平台提交限制。只有第 1 项是当前获准的下一步；其余均是排队候选，不能并发混入。"
+      },
+      {
+        "id": "top5_table_block",
+        "type": "table",
+        "tableId": "priorities"
+      },
+      {
+        "id": "experiment_contract",
+        "type": "markdown",
+        "body": "## 后续每轮固定输出\n每轮实验必须按相同顺序回答四件事：\n1. **发生了什么**：相对 EXP004 的准确率、CER、重复/错误类型与平台变化。\n2. **为什么**：只给有受控证据支持的解释，并标明仍未识别的混杂因素。\n3. **证据是什么**：配置 diff、official validation、固定 OOD、错误样例、训练曲线和平台一次性结果。\n4. **下一轮只推荐一个实验**：写清唯一变量、预期信号、失败信号和停止条件。\n\n所有其它想法进入 backlog；没有完成上一项的验收前，不启动下一项。"
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## 证据限制\n- SenseVoice 的语言标签和转写只作诊断，不是人工真值；固定样本为 229 条，覆盖 99 位训练说话人。\n- 87 位新增说话人是相对现有 EXP004 Common Voice 说话人清单的增量，不是 Common Voice yue 全库说话人数。\n- Common Voice publisher 的 validated、train/dev/test 不是互斥总量；报告不把 validated 规模当作可直接训练的新增规模。\n- 平台不同权重对应不同派生抽样种子，单次平台差值不能单独证明因果。\n- 本报告遵守预先登记的准入门槛；不因 87 接近 100 而事后修改结论。"
+      }
+    ],
+    "cards": [
+      {
+        "id": "baseline_score",
+        "description": "当前唯一平台基线：EXP004 / Round 2 exact。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "EXP004 平台分",
+            "field": "baseline_platform",
+            "format": "number"
+          }
+        ],
+        "sourceId": "round8_diagnosis"
+      },
+      {
+        "id": "accepted_rows",
+        "description": "yue train 经重复和保护集泄漏清洗后的可用候选。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "通过 QC",
+            "field": "accepted_rows",
+            "format": "compact"
+          },
+          {
+            "label": "保留率",
+            "field": "retention_rate",
+            "format": "percent"
+          }
+        ],
+        "sourceId": "yue_audit"
+      },
+      {
+        "id": "new_speakers",
+        "description": "相对 EXP004 现有 Common Voice 说话人清单的新增人数；未达到预先登记门槛。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "新增说话人",
+            "field": "new_speakers",
+            "format": "number"
+          },
+          {
+            "label": "门槛",
+            "field": "speaker_threshold",
+            "format": "number"
+          }
+        ],
+        "sourceId": "yue_audit"
+      },
+      {
+        "id": "sample_yue",
+        "description": "固定 229 条 SenseVoice 声学诊断样本中的粤语标签比例。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "抽样粤语率",
+            "field": "sample_yue_rate",
+            "format": "percent"
+          }
+        ],
+        "sourceId": "yue_acoustic"
+      },
+      {
+        "id": "speaker_concentration",
+        "description": "yue train 中贡献最多的十位说话人占全部句子的比例。",
+        "dataset": "headline",
+        "metrics": [
+          {
+            "label": "Top 10 占比",
+            "field": "top10_share",
+            "format": "percent"
+          },
+          {
+            "label": "上限",
+            "field": "top10_threshold",
+            "format": "percent"
+          }
+        ],
+        "sourceId": "yue_audit"
+      }
+    ],
+    "charts": [
+      {
+        "id": "round8_ood",
+        "title": "Round 8 固定 OOD 句准确率",
+        "subtitle": "EXP004 在 Common Voice 与 MDCC 两个来源上同时保持较高覆盖；单一来源训练产生明显域专化。",
+        "type": "bar",
+        "intent": "comparison",
+        "question": "不同外部数据源组合如何影响两个固定 OOD 域？",
+        "rationale": "分组柱状图展示每个训练数据组合在 CV 与 MDCC 两个固定面板上的相对表现。",
+        "dataset": "round8_ood",
+        "encodings": {
+          "x": {
+            "field": "experiment"
+          },
+          "y": {
+            "field": "accuracy_pct"
+          },
+          "color": {
+            "field": "surface"
+          }
+        },
+        "options": {
+          "grouping": "grouped"
+        },
+        "palette": {
+          "kind": "categorical"
+        },
+        "legend": {
+          "position": "bottom",
+          "title": "固定 OOD 面板"
+        },
+        "sourceId": "round8_diagnosis"
+      },
+      {
+        "id": "overlap_counts",
+        "title": "yue train 规范化句子重叠",
+        "subtitle": "所有来源的精确音频重叠均为 0；规范化句子重叠最高也只有 11 条。",
+        "type": "bar",
+        "intent": "comparison",
+        "question": "yue train 与现有训练及受保护数据的文本重叠规模是多少？",
+        "rationale": "水平柱状图便于比较多个来源标签下的小整数重叠计数。",
+        "dataset": "overlap_counts",
+        "encodings": {
+          "x": {
+            "field": "reference"
+          },
+          "y": {
+            "field": "canonical_overlap"
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "grouping": "single"
+        },
+        "sourceId": "yue_overlap"
+      }
+    ],
+    "tables": [
+      {
+        "id": "admission_gates",
+        "title": "预先登记的 yue train 准入门槛",
+        "dataset": "admission_gates",
+        "columns": [
+          {
+            "field": "gate",
+            "label": "门槛"
+          },
+          {
+            "field": "observed",
+            "label": "观测值"
+          },
+          {
+            "field": "requirement",
+            "label": "要求"
+          },
+          {
+            "field": "passed",
+            "label": "通过"
+          }
+        ],
+        "defaultSort": {
+          "field": "passed",
+          "direction": "asc"
+        },
+        "sourceId": "yue_audit"
+      },
+      {
+        "id": "priorities",
+        "title": "下一阶段资源优先级",
+        "dataset": "priorities",
+        "columns": [
+          {
+            "field": "rank",
+            "label": "优先级",
+            "format": "number"
+          },
+          {
+            "field": "direction",
+            "label": "方向"
+          },
+          {
+            "field": "single_variable",
+            "label": "唯一变量"
+          },
+          {
+            "field": "expected_signal",
+            "label": "预期信号"
+          },
+          {
+            "field": "stop_signal",
+            "label": "停止信号"
+          },
+          {
+            "field": "gpu_cost",
+            "label": "GPU 成本"
+          }
+        ],
+        "defaultSort": {
+          "field": "rank",
+          "direction": "asc"
+        },
+        "sourceId": "round8_diagnosis"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "status": "ready",
+    "generatedAt": "2026-07-26T16:30:00+08:00",
+    "datasets": {
+      "headline": [
+        {
+          "baseline_platform": 63.02,
+          "accepted_rows": 7418,
+          "retention_rate": 0.9997304582,
+          "new_speakers": 87,
+          "speaker_threshold": 100,
+          "sample_yue_rate": 0.9956331878,
+          "top10_share": 0.4811320755,
+          "top10_threshold": 0.5
+        }
+      ],
+      "round8_ood": [
+        {
+          "experiment": "EXP001 MDCC73",
+          "surface": "CV OOD",
+          "accuracy_pct": 57.0,
+          "training_rows": 23304
+        },
+        {
+          "experiment": "EXP001 MDCC73",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 92.0,
+          "training_rows": 23304
+        },
+        {
+          "experiment": "EXP002 MDCC57",
+          "surface": "CV OOD",
+          "accuracy_pct": 55.3,
+          "training_rows": 14743
+        },
+        {
+          "experiment": "EXP002 MDCC57",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 89.3,
+          "training_rows": 14743
+        },
+        {
+          "experiment": "EXP003 CV57",
+          "surface": "CV OOD",
+          "accuracy_pct": 84.8,
+          "training_rows": 14743
+        },
+        {
+          "experiment": "EXP003 CV57",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 71.7,
+          "training_rows": 14743
+        },
+        {
+          "experiment": "EXP004 Round2 exact",
+          "surface": "CV OOD",
+          "accuracy_pct": 85.6,
+          "training_rows": 23304
+        },
+        {
+          "experiment": "EXP004 Round2 exact",
+          "surface": "MDCC OOD",
+          "accuracy_pct": 88.2,
+          "training_rows": 23304
+        }
+      ],
+      "overlap_counts": [
+        {
+          "reference": "MDCC train",
+          "canonical_overlap": 11,
+          "exact_audio_overlap": 0,
+          "candidate_rows": 7420
+        },
+        {
+          "reference": "CV zh-HK train",
+          "canonical_overlap": 9,
+          "exact_audio_overlap": 0,
+          "candidate_rows": 7420
+        },
+        {
+          "reference": "Official train",
+          "canonical_overlap": 7,
+          "exact_audio_overlap": 0,
+          "candidate_rows": 7420
+        },
+        {
+          "reference": "CV zh-HK test",
+          "canonical_overlap": 5,
+          "exact_audio_overlap": 0,
+          "candidate_rows": 7420
+        },
+        {
+          "reference": "CV zh-HK dev",
+          "canonical_overlap": 2,
+          "exact_audio_overlap": 0,
+          "candidate_rows": 7420
+        },
+        {
+          "reference": "MDCC test",
+          "canonical_overlap": 1,
+          "exact_audio_overlap": 0,
+          "candidate_rows": 7420
+        },
+        {
+          "reference": "MDCC validation",
+          "canonical_overlap": 0,
+          "exact_audio_overlap": 0,
+          "candidate_rows": 7420
+        }
+      ],
+      "admission_gates": [
+        {
+          "gate": "保留率",
+          "observed": "99.97%",
+          "requirement": "≥ 80%",
+          "passed": "是"
+        },
+        {
+          "gate": "新增句子",
+          "observed": "7,418",
+          "requirement": "≥ 1,000",
+          "passed": "是"
+        },
+        {
+          "gate": "新增说话人",
+          "observed": "87",
+          "requirement": "≥ 100",
+          "passed": "否"
+        },
+        {
+          "gate": "新增时长",
+          "observed": "8.29 h",
+          "requirement": "≥ 3 h",
+          "passed": "是"
+        },
+        {
+          "gate": "抽样粤语率",
+          "observed": "99.56%",
+          "requirement": "≥ 85%",
+          "passed": "是"
+        },
+        {
+          "gate": "清洗后保护文本重叠",
+          "observed": "0",
+          "requirement": "= 0",
+          "passed": "是"
+        },
+        {
+          "gate": "清洗后保护音频重叠",
+          "observed": "0",
+          "requirement": "= 0",
+          "passed": "是"
+        },
+        {
+          "gate": "Top 10 说话人占比",
+          "observed": "48.11%",
+          "requirement": "< 50%",
+          "passed": "是"
+        },
+        {
+          "gate": "增量覆盖",
+          "observed": "有",
+          "requirement": "= 有",
+          "passed": "是"
+        }
+      ],
+      "priorities": [
+        {
+          "rank": 1,
+          "direction": "EXP004 解码重复保护",
+          "single_variable": "no_repeat_ngram_size=2",
+          "expected_signal": "runaway 11→0；CER 下降；validation accuracy 下降≤0.3pp",
+          "stop_signal": "正常粤语重复被抑制或 CER 退化",
+          "gpu_cost": "极低，无训练"
+        },
+        {
+          "rank": 2,
+          "direction": "现有 CV+MDCC 来源比例搜索",
+          "single_variable": "固定总步数，只改变 CV:MDCC 采样比",
+          "expected_signal": "两个 OOD 面板保持平衡，official validation 不退化",
+          "stop_signal": "任一 OOD 域专化或平台不超过 63.02",
+          "gpu_cost": "中"
+        },
+        {
+          "rank": 3,
+          "direction": "EXP004 后官方短收尾",
+          "single_variable": "仅增加短 official-only tail SFT",
+          "expected_signal": "官方 validation 提升且双域 OOD 基本保持",
+          "stop_signal": "OOD 下降或 epoch 1 后 validation 恶化",
+          "gpu_cost": "低"
+        },
+        {
+          "rank": 4,
+          "direction": "yue 说话人平衡候选",
+          "single_variable": "预先锁定的 speaker-balanced yue 小比例替换",
+          "expected_signal": "新增说话人覆盖提高，双域 OOD 不被稀释",
+          "stop_signal": "门槛仍不通过或来源权重失衡",
+          "gpu_cost": "中；需先重新审计"
+        },
+        {
+          "rank": 5,
+          "direction": "参数更新范围",
+          "single_variable": "冻结 encoder 底部 3 层",
+          "expected_signal": "官方 validation/CER 提升且 OOD 不退化",
+          "stop_signal": "收敛变慢或语音域适应不足",
+          "gpu_cost": "中"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "yue_audit",
+      "label": "Common Voice 26 yue 审计总报告",
+      "path": "reports/common_voice_26_yue_admission_audit/evidence/data_report.json",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "description": "读取 yue 各 split、质量、增量覆盖、准入门槛与声学抽样结果。",
+        "sql": "SELECT * FROM read_json_auto('reports/common_voice_26_yue_admission_audit/evidence/data_report.json');",
+        "tables_used": [
+          "reports/common_voice_26_yue_admission_audit/evidence/data_report.json"
+        ]
+      }
+    },
+    {
+      "id": "yue_overlap",
+      "label": "Common Voice 26 yue 重复与泄漏审计",
+      "path": "reports/common_voice_26_yue_admission_audit/evidence/overlap_summary.json"
+    },
+    {
+      "id": "yue_acoustic",
+      "label": "Common Voice 26 yue 固定声学抽样诊断",
+      "path": "reports/common_voice_26_yue_admission_audit/evidence/acoustic_summary.json"
+    },
+    {
+      "id": "round8_diagnosis",
+      "label": "Round 8 数据源消融诊断",
+      "path": "reports/round_8/diagnosis/artifact.json"
+    },
+    {
+      "id": "mdc_yue",
+      "label": "Mozilla Data Collective: Common Voice Scripted Speech 26.0 — Cantonese",
+      "href": "https://mozilladatacollective.com/datasets/cmqinjd7x00vynq07pwzo3lmp"
+    }
+  ],
+  "package_info": {
+    "artifact_type": "technical_report",
+    "audience": "Cantonese ASR competition research team",
+    "scope": "Common Voice 26 yue admission audit and post-Round-8 research prioritization; no training"
+  }
+}

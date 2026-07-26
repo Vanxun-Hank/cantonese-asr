@@ -1,0 +1,22 @@
+{
+  "sample_rows": 229,
+  "decoded_rows": 229,
+  "languages": {
+    "ko": 1,
+    "yue": 228
+  },
+  "sample_yue_rate": 0.9956331877729258,
+  "normalized_cer_mean": 0.08805582969432312,
+  "normalized_cer_p50": 0.058824,
+  "runner": {
+    "runner": "FunASRSenseVoiceRunner",
+    "model_dir": "/home/bolin/cantonese-asr/artifacts/models/SenseVoiceSmall",
+    "funasr_version": "1.3.28",
+    "device": "cuda:0",
+    "language": "auto",
+    "use_itn": false,
+    "parser": "language tag from raw <|...|> output; rich postprocessor for text"
+  },
+  "training_runs_started": 0,
+  "platform_submissions": 0
+}
