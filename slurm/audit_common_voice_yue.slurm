@@ -12,7 +12,9 @@ MDC_ENV="$HOME/.config/cantonese-asr/mdc.env"
 if [[ -z "${MDC_API_KEY:-}" && -f "$MDC_ENV" ]]; then
   # The file contains only private environment exports and must never be logged.
   # shellcheck disable=SC1090
+  set -a
   source "$MDC_ENV"
+  set +a
 fi
 if [[ -z "${MDC_API_KEY:-}" ]]; then
   echo "MDC_API_KEY is not configured" >&2

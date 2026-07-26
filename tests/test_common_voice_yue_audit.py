@@ -145,3 +145,4 @@ def test_slurm_audit_is_cpu_only_and_fixed_dataset() -> None:
     assert "scripts/download_mdc_dataset.py" in text
     assert "scripts/audit_common_voice_yue.py" in text
     assert "train.py" not in text
+    assert "set -a" in text
