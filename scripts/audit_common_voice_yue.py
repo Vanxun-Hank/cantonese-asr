@@ -431,10 +431,19 @@ def main() -> None:
         if row.get("audio_sha256") not in all_reference_audio
         and row.get("pcm_sha256") not in all_reference_pcm
     ]
-    protected_text_overlap = sum(row["canonical"] in protected_text for row in train_rows)
-    protected_audio_overlap = sum(
+    raw_protected_text_overlap = sum(
+        row["canonical"] in protected_text for row in train_rows
+    )
+    raw_protected_audio_overlap = sum(
         row.get("audio_sha256") in protected_audio or row.get("pcm_sha256") in protected_audio
         for row in train_rows
+    )
+    protected_text_overlap = sum(
+        row["canonical"] in protected_text for row in accepted
+    )
+    protected_audio_overlap = sum(
+        row.get("audio_sha256") in protected_audio or row.get("pcm_sha256") in protected_audio
+        for row in accepted
     )
     gate_metrics = {
         "retention_rate": len(accepted) / len(train_rows) if train_rows else 0.0,
@@ -442,6 +451,8 @@ def main() -> None:
         "new_speakers": len(new_speakers),
         "new_hours": sum(float(row.get("duration_s") or 0) for row in new_rows) / 3600,
         "sample_yue_rate": None,
+        "raw_protected_text_overlap": raw_protected_text_overlap,
+        "raw_protected_audio_overlap": raw_protected_audio_overlap,
         "protected_text_overlap": protected_text_overlap,
         "protected_audio_overlap": protected_audio_overlap,
         "top10_speaker_share": train_profile["top10_speaker_share"],

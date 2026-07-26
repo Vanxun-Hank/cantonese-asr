@@ -151,6 +151,24 @@ def test_admission_is_pending_before_acoustic_review() -> None:
     assert result["decision"] == "pending_acoustic_review"
 
 
+def test_raw_overlap_does_not_fail_gate_after_quarantine() -> None:
+    result = decide_admission(
+        {
+            "retention_rate": 0.90,
+            "new_utterances": 1200,
+            "new_speakers": 150,
+            "new_hours": 4.0,
+            "sample_yue_rate": 0.90,
+            "raw_protected_text_overlap": 2,
+            "protected_text_overlap": 0,
+            "protected_audio_overlap": 0,
+            "top10_speaker_share": 0.30,
+            "incremental_coverage": True,
+        }
+    )
+    assert result["decision"] == "admit"
+
+
 def test_slurm_audit_is_cpu_only_and_fixed_dataset() -> None:
     text = Path("slurm/audit_common_voice_yue.slurm").read_text(encoding="utf-8")
     assert "--gres=gpu" not in text
