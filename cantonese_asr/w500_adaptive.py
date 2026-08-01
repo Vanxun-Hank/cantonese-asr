@@ -214,6 +214,9 @@ def branch_top_two(
                     "name": f"TOP{rank}_{mode.upper()}_TO_{target_hours:g}H",
                     "parent_label": parent["label"],
                     "start_checkpoint": parent["checkpoint"],
+                    "processor_checkpoint": parent.get(
+                        "processor_checkpoint", parent["checkpoint"]
+                    ),
                     "start_hours": float(parent["hours"]),
                     "target_hours": float(target_hours),
                     "wenet_manifest": manifest,

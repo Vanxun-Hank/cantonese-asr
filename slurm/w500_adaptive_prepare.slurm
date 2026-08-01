@@ -18,8 +18,14 @@ require_allowed_gpu_allocation
 
 CONFIG=configs/rounds/w500_adaptive_continuation.json
 ARTIFACT=artifacts/w500_adaptive_continuation_v1
-LAUNCH=artifacts/w500_adaptive_continuation_launch/prepare
+RECOVER=${ADAPTIVE_PREP_RECOVER:-0}
+if [[ "$RECOVER" == 1 ]]; then
+  LAUNCH=artifacts/w500_adaptive_continuation_launch/prepare_recovery_${SLURM_JOB_ID}
+else
+  LAUNCH=artifacts/w500_adaptive_continuation_launch/prepare
+fi
 START=outputs/w500-encoder-only-incremental-v2/W500_EONLY_R1TO1_ELR1E6/checkpoint-wenet-35h
+PROCESSOR=outputs/w500-encoder-only-incremental-v2/W500_EONLY_R1TO1_ELR1E6
 
 physical_gpus="$(
   scontrol show job -dd "$SLURM_JOB_ID" \
@@ -30,9 +36,13 @@ if [[ "$physical_gpus" != "0,1,2,3" && "$physical_gpus" != "0-3" ]]; then
   echo "Refusing allocation ${physical_gpus:-unknown}; expected physical GPUs 0-3" >&2
   exit 42
 fi
-if [[ -e "$ARTIFACT" ]]; then
+if [[ "$RECOVER" != 1 && -e "$ARTIFACT" ]]; then
   echo "Refusing to overwrite immutable preparation output: $ARTIFACT" >&2
   exit 2
+fi
+if [[ "$RECOVER" == 1 ]]; then
+  test -d "$ARTIFACT"
+  test ! -e "$ARTIFACT/MANIFESTS_FROZEN"
 fi
 mkdir -p "$LAUNCH" logs
 scontrol show job -dd "$SLURM_JOB_ID" >"$LAUNCH/slurm_job_${SLURM_JOB_ID}.txt"
@@ -68,20 +78,25 @@ for label,(path,expected) in checks.items():
 if bad: raise SystemExit(f'Frozen provenance mismatch: {bad}')
 stable=Path(cfg['start']['stable_decoder_checkpoint'])/'model.safetensors'
 if not stable.is_file(): raise SystemExit(f'Missing stable Decoder endpoint: {stable}')
+processor=Path(cfg['start']['processor_checkpoint'])
+for name,expected in cfg['start']['processor_files_sha256'].items():
+    observed=sha(processor/name)
+    print(f'processor:{name}\t{observed}\t{processor/name}')
+    if observed != expected: bad.append((f'processor:{name}',observed,expected))
+if bad: raise SystemExit(f'Frozen processor provenance mismatch: {bad}')
 PY
 
-"$PYTHON" scripts/prepare_w500_adaptive_continuation.py \
-  --project-root "$PROJECT_DIR" \
-  --config "$CONFIG" \
-  --mode audit \
-  --output-dir "$ARTIFACT" \
-  >"$LAUNCH/audit_${SLURM_JOB_ID}.log" 2>&1
-
 ELIGIBLE=$ARTIFACT/eligible_candidates.jsonl
-ELIGIBLE_SHA=$(sha256sum "$ELIGIBLE" | awk '{print $1}')
 SHARDS=$ARTIFACT/loss_shards
-mkdir -p "$SHARDS"
-"$PYTHON" - "$ELIGIBLE" "$SHARDS" <<'PY'
+if [[ "$RECOVER" != 1 ]]; then
+  "$PYTHON" scripts/prepare_w500_adaptive_continuation.py \
+    --project-root "$PROJECT_DIR" \
+    --config "$CONFIG" \
+    --mode audit \
+    --output-dir "$ARTIFACT" \
+    >"$LAUNCH/audit_${SLURM_JOB_ID}.log" 2>&1
+  mkdir -p "$SHARDS"
+  "$PYTHON" - "$ELIGIBLE" "$SHARDS" <<'PY'
 import json,sys
 from pathlib import Path
 
@@ -101,6 +116,34 @@ finally:
 (root/'shard_counts.json').write_text(json.dumps({'passed':sum(counts)>0,'counts':counts},indent=2)+'\n')
 print(json.dumps({'counts':counts},indent=2))
 PY
+else
+  "$PYTHON" - "$ARTIFACT" <<'PY'
+import hashlib,json,sys
+from pathlib import Path
+
+root=Path(sys.argv[1]); eligible=root/'eligible_candidates.jsonl'
+summary=json.load(open(root/'candidate_audit_summary.json'))
+if not summary.get('passed'): raise SystemExit('Candidate audit did not pass')
+def sha(path):
+ h=hashlib.sha256()
+ with path.open('rb') as f:
+  for block in iter(lambda:f.read(8*1024*1024),b''): h.update(block)
+ return h.hexdigest()
+observed=sha(eligible)
+expected=summary['eligible']['sha256']
+if observed!=expected: raise SystemExit(f'Eligible manifest hash mismatch: {observed} != {expected}')
+counts=json.load(open(root/'loss_shards'/'shard_counts.json'))['counts']
+if counts != [24824,24824,24824,24824]: raise SystemExit(f'Unexpected preserved shard counts: {counts}')
+for index,count in enumerate(counts):
+ path=root/'loss_shards'/f'shard_{index}.jsonl'
+ rows=sum(1 for line in path.open(encoding='utf-8') if line.strip())
+ if rows!=count: raise SystemExit(f'Shard {index} row mismatch: {rows} != {count}')
+ for stale in (root/'loss_shards'/f'losses_{index}.jsonl',root/'loss_shards'/f'losses_{index}.receipt.json'):
+  if stale.exists(): raise SystemExit(f'Refusing stale partial loss artifact: {stale}')
+print(json.dumps({'passed':True,'eligible_sha256':observed,'counts':counts},indent=2))
+PY
+fi
+ELIGIBLE_SHA=$(sha256sum "$ELIGIBLE" | awk '{print $1}')
 
 pids=()
 for gpu in 0 1 2 3; do
@@ -108,7 +151,7 @@ for gpu in 0 1 2 3; do
     export CUDA_VISIBLE_DEVICES=$gpu
     "$PYTHON" scripts/evaluate_w500_candidate_losses.py \
       --model-dir "$START" \
-      --processor-dir "$START" \
+      --processor-dir "$PROCESSOR" \
       --manifest "$SHARDS/shard_${gpu}.jsonl" \
       --eligible-manifest-sha256 "$ELIGIBLE_SHA" \
       --project-root "$PROJECT_DIR" \

@@ -3,6 +3,17 @@
   "version": 1,
   "start": {
     "checkpoint": "outputs/w500-encoder-only-incremental-v2/W500_EONLY_R1TO1_ELR1E6/checkpoint-wenet-35h",
+    "processor_checkpoint": "outputs/w500-encoder-only-incremental-v2/W500_EONLY_R1TO1_ELR1E6",
+    "processor_files_sha256": {
+      "added_tokens.json": "9715fd2243b6f06a5858b5e32950d2853f73dd5bc201aafcf76f5082a2d8acd1",
+      "merges.txt": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6",
+      "normalizer.json": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd",
+      "preprocessor_config.json": "994838f1fa6462c8b9b3c90edada831f11f3dd8b4664634e18f4694d005c9dbf",
+      "special_tokens_map.json": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691",
+      "tokenizer.json": "1ba9405696b23b94e02472b22f0348926c4e5cd8cd811bf220ce595ce492d637",
+      "tokenizer_config.json": "21a4fc0483c14b87f4e0bbc177a9a357479bfa7c95aaf21ad53d71e9c5afafb9",
+      "vocab.json": "8f680bba319e01a653d2e8a5dbc17a9157179e0576e6ce74ce0c06356c6e24f9"
+    },
     "weight_sha256": "9cbc56266b7c263f93475230fa3e3c350841835f4049261c847c0bc36b04b9d6",
     "config_sha256": "53b4eb5c1c63510e9541417174df6ed709cd59e0b052492446ca1287088ee023",
     "generation_config_sha256": "3f2ced827b5a4b0241c4f2f8883cf13da2b00ece23c341d663333c9b07b8de64",

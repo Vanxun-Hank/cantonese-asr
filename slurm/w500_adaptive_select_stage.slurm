@@ -28,11 +28,15 @@ LAUNCH=$ARTIFACT/stage${ADAPTIVE_STAGE}/launch/selection
 mkdir -p "$LAUNCH"
 scontrol show job -dd "$SLURM_JOB_ID" >"$LAUNCH/slurm_job_${SLURM_JOB_ID}.txt"
 
-completion=outputs/w500-adaptive-continuation-v1/evaluation/stage${ADAPTIVE_STAGE}/evaluation_completion.json
-"$PYTHON" - "$completion" <<'PY'
+TRAIN_ROOT=${ADAPTIVE_TRAIN_ROOT:-outputs/w500-adaptive-continuation-v1/stage${ADAPTIVE_STAGE}}
+STAGE_EVAL_ROOT=${ADAPTIVE_STAGE_EVAL_ROOT:-outputs/w500-adaptive-continuation-v1/evaluation/stage${ADAPTIVE_STAGE}}
+training_completion=$TRAIN_ROOT/training_completion.json
+evaluation_completion=$STAGE_EVAL_ROOT/evaluation_completion.json
+"$PYTHON" - "$training_completion" "$evaluation_completion" <<'PY'
 import json,sys
-value=json.load(open(sys.argv[1]))
-if not value.get('passed'): raise SystemExit(f'Failed evaluation completion: {sys.argv[1]}')
+for role,path in zip(('training','evaluation'),sys.argv[1:]):
+ value=json.load(open(path))
+ if not value.get('passed'): raise SystemExit(f'Failed {role} completion: {path}')
 PY
 
 args=(

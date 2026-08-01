@@ -451,6 +451,7 @@ def _branch_parent(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "label": row["label"],
         "checkpoint": row["checkpoint"],
+        "processor_checkpoint": row.get("processor_dir", row["checkpoint"]),
         "model_safetensors_sha256": row["model_safetensors_sha256"],
         "hours": float(row["hours"]),
         "wenet_lr": float(row["wenet_lr"]),

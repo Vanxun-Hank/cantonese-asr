@@ -45,6 +45,10 @@ def test_registry_has_approved_stage40_matrix() -> None:
     assert cfg["start"]["weight_sha256"] == (
         "9cbc56266b7c263f93475230fa3e3c350841835f4049261c847c0bc36b04b9d6"
     )
+    assert cfg["start"]["processor_checkpoint"].endswith(
+        "W500_EONLY_R1TO1_ELR1E6"
+    )
+    assert "preprocessor_config.json" in cfg["start"]["processor_files_sha256"]
     assert [arm["name"] for arm in cfg["stage40"]["arms"]] == [
         "OLDSTREAM_HALF_LR",
         "BALANCED_ORIG_LR",
@@ -121,6 +125,7 @@ def test_branch_top_two_creates_constant_and_half_lr_per_parent() -> None:
         {
             "label": "p1",
             "checkpoint": "/p1",
+            "processor_checkpoint": "/processor-p1",
             "hours": 40.0,
             "wenet_lr": 5e-7,
             "official_lr": 2.5e-7,
@@ -130,6 +135,7 @@ def test_branch_top_two_creates_constant_and_half_lr_per_parent() -> None:
         {
             "label": "p2",
             "checkpoint": "/p2",
+            "processor_checkpoint": "/processor-p2",
             "hours": 40.0,
             "wenet_lr": 2.5e-7,
             "official_lr": 1.25e-7,
@@ -148,3 +154,9 @@ def test_branch_top_two_creates_constant_and_half_lr_per_parent() -> None:
     assert arms[1]["wenet_lr"] == 2.5e-7
     assert arms[3]["official_lr"] == 6.25e-8
     assert {arm["wenet_continuation_cursor"] for arm in arms} == {1200}
+    assert [arm["processor_checkpoint"] for arm in arms] == [
+        "/processor-p1",
+        "/processor-p1",
+        "/processor-p2",
+        "/processor-p2",
+    ]

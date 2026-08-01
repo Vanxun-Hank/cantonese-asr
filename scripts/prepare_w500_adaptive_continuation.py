@@ -651,6 +651,9 @@ def freeze_manifests(
                 "gpu": index,
                 "stream": arm["stream"],
                 "start_checkpoint": str(_resolve(root, cfg["start"]["checkpoint"]).resolve()),
+                "processor_checkpoint": str(
+                    _resolve(root, cfg["start"]["processor_checkpoint"]).resolve()
+                ),
                 "start_hours": round(start_hours, 10),
                 "target_hours": 40.0,
                 "wenet_manifest": str(stream_path.resolve()),

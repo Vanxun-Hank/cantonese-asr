@@ -611,10 +611,18 @@ def main() -> None:
         raise SystemExit("Gradient checkpointing must remain disabled")
 
     start_checkpoint = _resolve(root, arm["start_checkpoint"])
+    processor_source = _resolve(
+        root,
+        arm.get(
+            "processor_checkpoint",
+            config["start"].get("processor_checkpoint", start_checkpoint),
+        ),
+    )
     wenet_manifest = _resolve(root, arm["wenet_manifest"])
     official_manifest = _resolve(root, config["data"]["official"])
     for path, label in (
         (start_checkpoint, "start checkpoint"),
+        (processor_source, "processor checkpoint"),
         (wenet_manifest, "Wenet manifest"),
         (official_manifest, "Official manifest"),
     ):
@@ -626,6 +634,18 @@ def main() -> None:
         expected_start_hash = config["start"]["weight_sha256"]
     if expected_start_hash is not None and start_weight_hash != expected_start_hash:
         raise SystemExit("Starting checkpoint weight hash mismatch")
+    expected_processor_hashes = config["start"].get("processor_files_sha256", {})
+    observed_processor_hashes = {
+        name: sha256_file(processor_source / name)
+        for name in expected_processor_hashes
+    }
+    processor_mismatches = {
+        name: {"expected": expected, "observed": observed_processor_hashes[name]}
+        for name, expected in expected_processor_hashes.items()
+        if observed_processor_hashes[name] != expected
+    }
+    if processor_mismatches:
+        raise SystemExit(f"Processor provenance mismatch: {processor_mismatches}")
 
     identity = {
         "arm_name": str(arm["name"]),
@@ -636,6 +656,8 @@ def main() -> None:
         "trainer_sha256": sha256_file(Path(__file__).resolve()),
         "start_checkpoint": str(start_checkpoint),
         "start_weight_sha256": start_weight_hash,
+        "processor_checkpoint": str(processor_source),
+        "processor_files_sha256": observed_processor_hashes,
         "wenet_manifest": str(wenet_manifest),
         "wenet_manifest_sha256": sha256_file(wenet_manifest),
         "official_manifest": str(official_manifest),
@@ -673,8 +695,6 @@ def main() -> None:
     torch.backends.cudnn.allow_tf32 = bool(training["tf32"])
     device = torch.device("cuda:0")
     model_source = resume if resume is not None else start_checkpoint
-    processor_source = Path(arm.get("processor_checkpoint", start_checkpoint))
-    processor_source = _resolve(root, processor_source)
     processor = WhisperProcessor.from_pretrained(processor_source, local_files_only=True)
     model = WhisperForConditionalGeneration.from_pretrained(
         model_source, local_files_only=True

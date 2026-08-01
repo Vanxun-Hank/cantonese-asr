@@ -155,6 +155,9 @@ def test_audit_then_freeze_writes_atomic_nested_receipts(
     ]
     assert {arm["wenet_continuation_cursor"] for arm in arms} == {0}
     assert {arm["official_sample_cursor"] for arm in arms} == {7712}
+    assert {arm["processor_checkpoint"] for arm in arms} == {
+        str((tmp_path / cfg["start"]["processor_checkpoint"]).resolve())
+    }
 
 
 def test_freeze_rejects_incomplete_or_stale_loss_sidecar(
@@ -181,3 +184,57 @@ def test_freeze_rejects_incomplete_or_stale_loss_sidecar(
         prepare.freeze_manifests(tmp_path, cfg, out, bad_losses)
     assert not (out / "MANIFESTS_FROZEN").exists()
     assert not (out / "manifests").exists()
+
+
+def test_8gpu_recovery_treats_slurmdb_accounting_as_noncritical() -> None:
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "slurm/w500_adaptive_prepare_recover_8gpu.slurm"
+    ).read_text(encoding="utf-8")
+    assert 'if ! sacct -j "$FAILED_PREP_JOB_ID"' in script
+    assert "UNAVAILABLE_FROM_COMPUTE_NODE" in script
+    assert "loss_gpu${gpu}_${FAILED_PREP_JOB_ID}.status" in script
+    assert "4 candidate-loss worker(s) failed" in script
+    assert "sacct -X" not in script
+
+
+def test_failed_prep_recovery_uses_two_nodes_eight_gpus_and_preserved_audit() -> None:
+    recovery = (
+        ROOT / "slurm/w500_adaptive_prepare_recover_8gpu.slurm"
+    ).read_text(encoding="utf-8")
+    worker = (ROOT / "scripts/run_w500_adaptive_loss_node.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "#SBATCH --nodes=2" in recovery
+    assert "#SBATCH --ntasks=2" in recovery
+    assert "#SBATCH --ntasks-per-node=1" in recovery
+    assert "#SBATCH --nodelist=gpu001,gpu002" in recovery
+    assert "#SBATCH --gres=gpu:4" in recovery
+    assert "FAILED_PREP_JOB_ID=1541" in recovery
+    assert "EXPECTED_ELIGIBLE_ROWS=99296" in recovery
+    assert "EXPECTED_PARENT_ROWS=24824" in recovery
+    assert "EXPECTED_PARENT_SHAS=(" in recovery
+    assert "--mode audit" not in recovery
+    assert "audit_reused_without_rebuild" in recovery
+    assert "parent_index * 2 + parity" in recovery
+    assert "srun --nodes=2 --ntasks=2 --ntasks-per-node=1" in recovery
+    assert "bash scripts/run_w500_adaptive_loss_node.sh" in recovery
+    assert "for worker_index in range(8)" in recovery
+    assert recovery.index("for worker_index in range(8)") < recovery.index(
+        "--mode freeze"
+    )
+    assert "merge/freeze skipped" in recovery
+    assert "model_and_data_modified\": False" in recovery
+
+    processor = (
+        "outputs/w500-encoder-only-incremental-v2/"
+        "W500_EONLY_R1TO1_ELR1E6"
+    )
+    assert f"PROCESSOR={processor}" in recovery
+    assert 'gpu001) worker_offset=0' in worker
+    assert 'gpu002) worker_offset=4' in worker
+    assert "for local_gpu in 0 1 2 3" in worker
+    assert 'export CUDA_VISIBLE_DEVICES=$local_gpu' in worker
+    assert '--processor-dir "$PROCESSOR"' in worker
+    assert 'printf \'COMPLETED\\n\'' in worker
