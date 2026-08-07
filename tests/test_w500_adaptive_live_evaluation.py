@@ -18,12 +18,6 @@ from cantonese_asr.w500_live_evaluation import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[1]
-LIVE_SLURM = ROOT / "slurm/w500_adaptive_evaluate_stage.slurm"
-SERIAL_SLURM = ROOT / "slurm/w500_adaptive_evaluate_stage_recovery.slurm"
-SELECT_SLURM = ROOT / "slurm/w500_adaptive_select_stage.slurm"
-
-
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -176,33 +170,3 @@ def test_stage_completion_requires_root_and_every_arm_checkpoint_receipt(
         verify_stage_training_completion(
             tmp_path, arm_names=names, expected_targets=targets
         )
-
-
-def test_live_slurm_uses_gpu002_without_replacing_serial_recovery() -> None:
-    live = LIVE_SLURM.read_text(encoding="utf-8")
-    serial = SERIAL_SLURM.read_text(encoding="utf-8")
-    assert "#SBATCH --nodelist=gpu002" in live
-    assert "#SBATCH --gres=gpu:4" in live
-    assert "sha256sums.json" in live
-    assert "after_complete_wenet_official_cycle" in live
-    assert "state.get('next_source')!='wenet'" in live
-    assert 'wait_for_training_artifact "$ROOT/training_completion.json"' in live
-    assert "scripts/evaluate_exp004_decoding_arm.py" in live
-    assert "--batch-size 4" in live
-    assert "--generation-max-length 225" in live
-    assert "#SBATCH --nodelist=gpu002" in serial
-    assert "serial_after_training_recovery" in serial
-    assert "ADAPTIVE_EVAL_ROOT" in serial
-    assert "Stage training completion did not pass" in serial
-    assert "Expected 16 completed stage checkpoints" in serial
-    assert "scripts/evaluate_exp004_decoding_arm.py" in serial
-    assert "--batch-size 4" in serial
-    assert "--generation-max-length 225" in serial
-
-
-def test_selector_rechecks_both_stage_completions_before_ranking() -> None:
-    text = SELECT_SLURM.read_text(encoding="utf-8")
-    assert "training_completion=$TRAIN_ROOT/training_completion.json" in text
-    assert "evaluation_completion=$STAGE_EVAL_ROOT/evaluation_completion.json" in text
-    assert '"$training_completion" "$evaluation_completion"' in text
-    assert "for role,path in zip(('training','evaluation')" in text

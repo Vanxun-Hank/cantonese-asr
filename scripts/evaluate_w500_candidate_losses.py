@@ -20,11 +20,10 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from transformers import WhisperProcessor
+from transformers import WhisperForConditionalGeneration, WhisperProcessor
 
 from cantonese_asr.io import read_jsonl, sha256_file
 from cantonese_asr.metrics import normalize_reference
-from cantonese_asr.model_loading import load_whisper_model
 from train import ManifestDataset, SpeechSeq2SeqCollator
 
 
@@ -126,7 +125,12 @@ def main() -> None:
         raise SystemExit("Candidate shard IDs must be unique")
 
     processor = WhisperProcessor.from_pretrained(args.processor_dir, local_files_only=True)
-    model = load_whisper_model(args.model_dir, dtype=dtype).to(device)
+    model = WhisperForConditionalGeneration.from_pretrained(
+        args.model_dir,
+        local_files_only=True,
+        use_safetensors=True,
+        dtype=dtype,
+    ).to(device)
     model.eval()
     dataset = ManifestDataset(args.manifest, processor, args.project_root)
     if len(dataset) != len(candidates):
