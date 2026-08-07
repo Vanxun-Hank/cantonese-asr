@@ -1,0 +1,89 @@
+{
+  "experiment": "W500 adaptive continuation then decoder interpolation",
+  "version": 1,
+  "start": {
+    "checkpoint": "outputs/w500-encoder-only-incremental-v2/W500_EONLY_R1TO1_ELR1E6/checkpoint-wenet-35h",
+    "processor_checkpoint": "outputs/w500-encoder-only-incremental-v2/W500_EONLY_R1TO1_ELR1E6",
+    "processor_files_sha256": {
+      "added_tokens.json": "9715fd2243b6f06a5858b5e32950d2853f73dd5bc201aafcf76f5082a2d8acd1",
+      "merges.txt": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6",
+      "normalizer.json": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd",
+      "preprocessor_config.json": "994838f1fa6462c8b9b3c90edada831f11f3dd8b4664634e18f4694d005c9dbf",
+      "special_tokens_map.json": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691",
+      "tokenizer.json": "1ba9405696b23b94e02472b22f0348926c4e5cd8cd811bf220ce595ce492d637",
+      "tokenizer_config.json": "21a4fc0483c14b87f4e0bbc177a9a357479bfa7c95aaf21ad53d71e9c5afafb9",
+      "vocab.json": "8f680bba319e01a653d2e8a5dbc17a9157179e0576e6ce74ce0c06356c6e24f9"
+    },
+    "weight_sha256": "9cbc56266b7c263f93475230fa3e3c350841835f4049261c847c0bc36b04b9d6",
+    "config_sha256": "53b4eb5c1c63510e9541417174df6ed709cd59e0b052492446ca1287088ee023",
+    "generation_config_sha256": "3f2ced827b5a4b0241c4f2f8883cf13da2b00ece23c341d663333c9b07b8de64",
+    "predict_py_sha256": "075d465a775f4ebff1f817d86ab16d3f8da0977257cdcab1870312aaa9c78546",
+    "actual_wenet_hours": 35.101072222222214,
+    "official_sample_cursor": 7712,
+    "stable_decoder_checkpoint": "outputs/w500-encoder-decoder-curriculum-v1/stage_a/A_HYBRID_DONLY_LR5E7/checkpoint-5"
+  },
+  "data": {
+    "w500_pool": "artifacts/data/processed/wenetspeech_yue_100_300_500_v1/manifests/wenet_filtered_500h.jsonl",
+    "consumed_35h": "artifacts/w500_encoder_only_incremental_v2/manifests/wenet_new_35h.jsonl",
+    "historical_40h": "artifacts/w500_encoder_decoder_curriculum_v1/manifests/wenet_new_40p0h.jsonl",
+    "champion_w20": "artifacts/exp004_wenet_quality_ab/manifests/current_wenet_2240.jsonl",
+    "official": "artifacts/manifests/train.jsonl",
+    "validation": "artifacts/manifests/validation.jsonl",
+    "public": "artifacts/datasets/official/template_pre.jsonl",
+    "ood": "artifacts/manifests/ood/v1/ood_panel.jsonl",
+    "selection_seed": 20260801,
+    "loss_percentile_initial": [0.10, 0.90],
+    "loss_percentile_relaxed": [0.05, 0.95],
+    "alignment_rows": 16,
+    "targets_hours": [40.0, 45.0, 50.0]
+  },
+  "training": {
+    "source_cycle": ["wenet", "official"],
+    "per_device_batch_size": 8,
+    "gradient_accumulation_steps": 2,
+    "global_effective_batch_size": 16,
+    "optimizer": "adamw_torch_reinitialized_at_branch",
+    "scheduler": "constant",
+    "warmup_steps": 0,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "seed": 42,
+    "data_seed": 42,
+    "bf16": true,
+    "tf32": true,
+    "gradient_checkpointing": false,
+    "apply_spec_augment": false,
+    "mask_time_prob": 0.0,
+    "mask_feature_prob": 0.0,
+    "save_interval_hours": 1.25
+  },
+  "stage40": {
+    "arms": [
+      {"name": "OLDSTREAM_HALF_LR", "stream": "historical", "wenet_lr": 5e-7, "official_lr": 2.5e-7},
+      {"name": "BALANCED_ORIG_LR", "stream": "balanced", "wenet_lr": 1e-6, "official_lr": 5e-7},
+      {"name": "BALANCED_HALF_LR", "stream": "balanced", "wenet_lr": 5e-7, "official_lr": 2.5e-7},
+      {"name": "BALANCED_QUARTER_LR", "stream": "balanced", "wenet_lr": 2.5e-7, "official_lr": 1.25e-7}
+    ]
+  },
+  "selection": {
+    "ranking_surface": "fixed_validation_only",
+    "proxy_cer_weight": 70.0,
+    "proxy_tol2_weight": 20.0,
+    "proxy_tie": 0.05,
+    "guardrails": {
+      "validation_tol2_min": 0.836880,
+      "public_tol2_min": 0.869211,
+      "public_insertions_max": 200,
+      "public_severe_max": 25,
+      "public_repeated_runaway_max": 0,
+      "public_replacement_max": 10,
+      "public_effective_max_length_max": 0,
+      "ood_tol2_min": 0.325,
+      "ood_cer_max": 0.346632
+    }
+  },
+  "interpolation": {
+    "alphas": [0.15, 0.30, 0.45, 0.60],
+    "names": ["MIX15", "MIX30", "MIX45", "MIX60"]
+  }
+}

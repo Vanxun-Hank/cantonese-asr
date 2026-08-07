@@ -64,3 +64,15 @@ BATCH_SIZE=4 GRAD_ACCUM=4 bash scripts/submit_grid.sh
 ## 离线提交
 
 `scripts/package_submission.py` 会创建平铺 ZIP，并校验其中恰好包含一个 `model.safetensors`。`scripts/verify_submission.py` 可在断网模式下检查模型加载、预测输出数量、顺序和 `audio_path` 一致性。
+
+## 当前公开最佳方法
+
+当前公开的最佳方法是 W500 adaptive curriculum：WenetSpeech-Yue batch
+只更新 Whisper Encoder，Official batch 则解除冻结并更新整个模型。两类
+optimizer step 交错进行，因此外部数据主要扩展粤语声学覆盖，而 Official
+短句持续校正粤语用字、插入、重复和 EOS 行为。
+
+平台得分 69.49 的精确模型发布在
+[Hugging Face](https://huggingface.co/Vanxun-Hank/whisper-small-cantonese-w500-adaptive)。
+训练逻辑、选择护栏、推理配置和复现范围见
+[`docs/W500_ADAPTIVE_METHOD.md`](docs/W500_ADAPTIVE_METHOD.md)。
