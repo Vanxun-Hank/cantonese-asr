@@ -52,4 +52,3 @@ reproducible implementation of its training and inference workflow to GitHub.
 - GitHub draft pull request URL and branch commit.
 - ZIP and model SHA-256 values matching the canonical artifact.
 - Focused tests and publication scans passing.
-
