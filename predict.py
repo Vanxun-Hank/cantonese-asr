@@ -15,11 +15,34 @@ import torch
 from transformers import WhisperForConditionalGeneration, WhisperProcessor
 
 
+def load_whisper_model(
+    model_dir: Path,
+    *,
+    dtype: torch.dtype | None = None,
+) -> WhisperForConditionalGeneration:
+    """Load the submitted full Whisper model without repository-local imports."""
+    kwargs: dict[str, Any] = {
+        "local_files_only": True,
+        "use_safetensors": True,
+    }
+    if dtype is not None:
+        kwargs["dtype"] = dtype
+    return WhisperForConditionalGeneration.from_pretrained(model_dir, **kwargs)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--audio_dir", type=Path, required=True)
     parser.add_argument("--test_list", type=Path, required=True)
     parser.add_argument("--output_jsonl", type=Path, required=True)
+    parser.add_argument(
+        "--diagnostics-jsonl",
+        type=Path,
+        help=(
+            "Optional local-only token sidecar for generation diagnostics. "
+            "The official output protocol is unchanged when omitted."
+        ),
+    )
     parser.add_argument("--model_dir", type=Path, default=Path(__file__).resolve().parent)
     parser.add_argument("--processor_dir", type=Path)
     parser.add_argument("--batch_size", type=int, default=8)
@@ -110,12 +133,7 @@ def main() -> None:
     processor = WhisperProcessor.from_pretrained(
         args.processor_dir or args.model_dir, local_files_only=True
     )
-    model = WhisperForConditionalGeneration.from_pretrained(
-        args.model_dir,
-        local_files_only=True,
-        dtype=dtype,
-        use_safetensors=True,
-    ).to(device)
+    model = load_whisper_model(args.model_dir, dtype=dtype).to(device)
     model.generation_config.language = "zh"
     model.generation_config.task = "transcribe"
     model.generation_config.forced_decoder_ids = None
@@ -129,6 +147,17 @@ def main() -> None:
 
     args.output_jsonl.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output_jsonl.with_suffix(args.output_jsonl.suffix + ".tmp")
+    diagnostic_temporary = None
+    if args.diagnostics_jsonl is not None:
+        args.diagnostics_jsonl.parent.mkdir(parents=True, exist_ok=True)
+        diagnostic_temporary = args.diagnostics_jsonl.with_suffix(
+            args.diagnostics_jsonl.suffix + ".tmp"
+        )
+    diagnostic_handle = (
+        diagnostic_temporary.open("w", encoding="utf-8")
+        if diagnostic_temporary is not None
+        else None
+    )
     with temporary.open("w", encoding="utf-8") as output:
         for start in range(0, len(listed_paths), args.batch_size):
             batch_paths = listed_paths[start : start + args.batch_size]
@@ -153,14 +182,37 @@ def main() -> None:
                     **generation_kwargs(args),
                 )
             texts = processor.batch_decode(predicted_ids, skip_special_tokens=True)
-            for listed_path, text in zip(batch_paths, texts):
+            token_rows = predicted_ids.detach().cpu().tolist()
+            for listed_path, text, token_ids in zip(
+                batch_paths,
+                texts,
+                token_rows,
+            ):
+                cleaned = text.strip()
                 output.write(
                     json.dumps(
-                        {"audio_path": listed_path, "pred_text": text.strip()},
+                        {"audio_path": listed_path, "pred_text": cleaned},
                         ensure_ascii=False,
                     )
                     + "\n"
                 )
+                if diagnostic_handle is not None:
+                    diagnostic_handle.write(
+                        json.dumps(
+                            {
+                                "audio_path": listed_path,
+                                "pred_text": cleaned,
+                                "token_ids": [int(token) for token in token_ids],
+                            },
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
+    if diagnostic_handle is not None:
+        diagnostic_handle.close()
+        assert diagnostic_temporary is not None
+        assert args.diagnostics_jsonl is not None
+        diagnostic_temporary.replace(args.diagnostics_jsonl)
     temporary.replace(args.output_jsonl)
 
 
