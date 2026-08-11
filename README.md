@@ -440,6 +440,9 @@ optimizer step 交错进行，因此外部数据主要扩展粤语声学覆盖�
 
 下一轮不应把“训练更久”当作默认答案，而应把主要变量拆开，按成本和风险逐级验证。下面是一条可复现、可回退的路线；其中“通过”表示在固定验证集上有收益，同时不能触发 Public/OOD 或离线推理一致性护栏。
 
+RAW_WINNER P0–P1 本轮已经执行的完整技术配置、八卡拓扑、解码矩阵、Official-only 回正、单轴增强、评测结果和提交校验，见
+[`docs/RAW_WINNER_P0_P1_TECHNICAL_REPORT.md`](docs/RAW_WINNER_P0_P1_TECHNICAL_REPORT.md)。
+
 ### P0：先建立可比较的误差基线
 
 1. **固定评测协议。** 锁定当前 checkpoint、manifest、文本规范化、音频顺序和提交校验，保存一份不可变的 69.49 基线。
