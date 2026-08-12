@@ -440,12 +440,13 @@ optimizer step 交错进行，因此外部数据主要扩展粤语声学覆盖�
 
 下一轮不应把“训练更久”当作默认答案，而应把主要变量拆开，按成本和风险逐级验证。下面是一条可复现、可回退的路线；其中“通过”表示在固定验证集上有收益，同时不能触发 Public/OOD 或离线推理一致性护栏。
 
-RAW_WINNER P0–P1 本轮已经执行的完整技术配置、八卡拓扑、解码矩阵、Official-only 回正、单轴增强、评测结果和提交校验，见
-[`docs/RAW_WINNER_P0_P1_TECHNICAL_REPORT.md`](docs/RAW_WINNER_P0_P1_TECHNICAL_REPORT.md)。
+RAW_WINNER 69.49 获胜训练链，以及 P0–P2 已执行实验的完整技术配置、数据与权重 provenance、八卡拓扑、指标语义、解码矩阵、Official-only 回正、单轴增强、Small/Medium/Large-v2 Full SFT/LoRA、Tokenizer/Unicode、字符 LM、融合、资源成本、失败恢复和 SHA-256，统一见：
 
-RAW_WINNER P2 的 150-step 等预算容量/PEFT 探针、粤语 Tokenizer/Unicode 审计、字符 5-gram LM 与三模型融合结果，见
-[`reports/raw_winner_p2_structural_probe.md`](reports/raw_winner_p2_structural_probe.md)；论文式实验与限制说明见
-[`paper/manuscript.md`](paper/manuscript.md)。P2 结果只支持短预算适配效率结论，不代表充分收敛后的架构排名。
+**[`docs/RAW_WINNER_P0_P1_P2_TECHNICAL_REPORT.md`](docs/RAW_WINNER_P0_P1_P2_TECHNICAL_REPORT.md)**
+
+这是推荐的唯一详细入口。P2 的自动生成简版见
+[`reports/raw_winner_p2_structural_probe.md`](reports/raw_winner_p2_structural_probe.md)，论文式实验与限制说明见
+[`paper/manuscript.md`](paper/manuscript.md)。P2 结果只支持 2,400 样本、150-step matched-budget 适配效率结论，不代表充分收敛后的架构排名，也没有混入 69.49 平台提交。
 
 ### P0：先建立可比较的误差基线
 
