@@ -18,6 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from cantonese_asr.io import sha256_file
 from cantonese_asr.model_loading import load_whisper_model
 from scripts.evaluate_raw_winner_decode import evaluate_surface
+from scripts.convert_openai_whisper_checkpoint import weight_surface_receipt
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,10 +27,19 @@ def parse_args() -> argparse.Namespace:
 
 
 def hash_weights(path: Path) -> dict:
-    names=("model.safetensors","adapter_model.safetensors")
-    found=[path/name for name in names if (path/name).is_file()]
-    if len(found)!=1: raise ValueError(f"expected exactly one full/adapter weight file in {path}: {found}")
-    return {"file":found[0].name,"sha256":sha256_file(found[0]),"bytes":found[0].stat().st_size}
+    adapter = path / "adapter_model.safetensors"
+    if adapter.is_file():
+        return {
+            "kind": "adapter",
+            "files": [
+                {
+                    "path": adapter.name,
+                    "sha256": sha256_file(adapter),
+                    "bytes": adapter.stat().st_size,
+                }
+            ],
+        }
+    return {"kind": "full", **weight_surface_receipt(path)}
 
 
 def main() -> None:

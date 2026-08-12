@@ -11,6 +11,7 @@ from scripts.convert_openai_whisper_checkpoint import (
     renamed_state_dict,
     weight_surface_receipt,
 )
+from scripts.evaluate_raw_winner_p2_capacity import hash_weights
 
 
 def test_fixed_exposure_sampler_is_sequential() -> None:
@@ -80,3 +81,13 @@ def test_sharded_weight_surface_receipt(tmp_path) -> None:
     receipt = weight_surface_receipt(tmp_path)
     assert receipt["sharded"] is True
     assert receipt["total_bytes"] > first.stat().st_size + second.stat().st_size
+    evaluation_receipt = hash_weights(tmp_path)
+    assert evaluation_receipt["kind"] == "full"
+    assert evaluation_receipt["surface_sha256"] == receipt["surface_sha256"]
+
+
+def test_adapter_weight_receipt(tmp_path) -> None:
+    (tmp_path / "adapter_model.safetensors").write_bytes(b"adapter")
+    receipt = hash_weights(tmp_path)
+    assert receipt["kind"] == "adapter"
+    assert receipt["files"][0]["path"] == "adapter_model.safetensors"
