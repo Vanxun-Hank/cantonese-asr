@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,25 @@ def args() -> argparse.Namespace:
 
 def load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def hashed_file(root: Path, path: Path) -> dict[str, Any]:
+    resolved = path if path.is_absolute() else root / path
+    if not resolved.is_file():
+        raise FileNotFoundError(resolved)
+    return {
+        "path": str(resolved.relative_to(root)),
+        "bytes": resolved.stat().st_size,
+        "sha256": sha256_file(resolved),
+    }
 
 
 def surface(root: Path, label: str, split: str) -> dict[str, Any] | None:
@@ -139,6 +159,27 @@ def main() -> None:
         "claim_boundary": "150-step matched-budget adaptation probe; not convergence",
         "fixed_exposure_rows": 2400,
         "global_effective_batch": 16,
+        "provenance": {
+            "experiment_config": hashed_file(
+                root, Path("configs/rounds/raw_winner_p2_structural_probe.json")
+            ),
+            "external73_manifest": hashed_file(
+                root, Path("artifacts/manifests/external/round2/external73.jsonl")
+            ),
+            "fixed_exposure_manifest": hashed_file(
+                root,
+                Path("artifacts/raw_winner_p2/preparation/external73_fixed_exposure_2400.jsonl"),
+            ),
+            "fixed_exposure_receipt": hashed_file(
+                root, Path("artifacts/raw_winner_p2/preparation/fixed_exposure_receipt.json")
+            ),
+            "validation_manifest": hashed_file(
+                root, Path("artifacts/manifests/validation.jsonl")
+            ),
+            "endpoint_evaluator": hashed_file(
+                root, Path("scripts/evaluate_raw_winner_p2_capacity.py")
+            ),
+        },
         "arms": {},
     }
     for arm in ARMS:
@@ -160,6 +201,7 @@ def main() -> None:
             "public": public,
             "ood": ood,
             "weights": receipt["weights"],
+            "run_config": hashed_file(root, capacity / arm / "run_config.json"),
             "training": training_row(capacity, arm),
             "inference32": benchmark(evaluation, arm),
         }
@@ -248,6 +290,21 @@ def main() -> None:
         f"- Leakage-guarded character 5-gram reranking selects `lambda={lm['selected_lambda']}`; therefore the LM did not improve the validation selection over ASR scores.",
         f"- Three-model fusion selects `{fusion['selected_method']}`. Validation MBR reaches tol2 `{fusion['surfaces']['validation']['mbr']['sentence_accuracy_tol2']:.4f}` and CER `{fusion['surfaces']['validation']['mbr']['cer']:.4f}`; Public MBR reaches `{fusion['surfaces']['public']['mbr']['sentence_accuracy_tol2']:.4f}/{fusion['surfaces']['public']['mbr']['cer']:.4f}`.",
         "- `no_eos_count` is reported separately from true repeated runaway. Medium/Large generation sidecars omit EOS in this Transformers path even when decoding terminates normally; repeated-runaway, max-length and replacement-character diagnostics remain the stability indicators.",
+        "",
+        "## Registered questions",
+        "",
+        "1. **Does model capacity improve 150-step adaptation efficiency?** Yes. Full-SFT validation improves monotonically from Small to Medium to Large-v2, while inference RTF and parameter cost increase monotonically as well.",
+        "2. **What is the Full-SFT/LoRA trade-off?** LoRA reduces trainable parameters and peak memory substantially, but every LoRA arm is worse than its matched Full-SFT arm under this short budget. This does not establish the fully converged ordering.",
+        "3. **Is the standard Whisper tokenizer a demonstrated Cantonese bottleneck?** No. The tokenizers and hashes are identical and audited references contain no unknown or replacement tokens. Multi-token encoding of Cantonese characters is measurable, but this probe does not show that vocabulary modification would improve ASR.",
+        "4. **Does the character LM exploit the 5-best oracle space?** No. Validation selects lambda zero even though an oracle gap exists, so this training-text-only 5-gram score does not identify the better hypotheses reliably.",
+        "5. **Are the three existing models complementary?** Yes, modestly. Character-edit MBR improves validation and Public over the individual top-1 surfaces, while the oracle remains better and quantifies residual fusion headroom.",
+        "",
+        "## Limitations",
+        "",
+        "- The 150-step matched-exposure protocol measures adaptation efficiency, not convergence, and must not be cited as a definitive Small/Medium/Large architecture ranking.",
+        "- Full and LoRA learning rates are method-specific registered values; the experiment compares practical short-budget recipes rather than exhaustively optimized hyperparameters.",
+        "- Public and OOD are diagnostic surfaces. Only fixed validation is used for endpoint and reranker selection.",
+        "- The fusion result is an offline multi-model analysis and carries approximately the combined inference cost of its three component systems.",
         "",
         "## Reproducibility",
         "",

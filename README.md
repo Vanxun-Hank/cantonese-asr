@@ -443,6 +443,10 @@ optimizer step 交错进行，因此外部数据主要扩展粤语声学覆盖�
 RAW_WINNER P0–P1 本轮已经执行的完整技术配置、八卡拓扑、解码矩阵、Official-only 回正、单轴增强、评测结果和提交校验，见
 [`docs/RAW_WINNER_P0_P1_TECHNICAL_REPORT.md`](docs/RAW_WINNER_P0_P1_TECHNICAL_REPORT.md)。
 
+RAW_WINNER P2 的 150-step 等预算容量/PEFT 探针、粤语 Tokenizer/Unicode 审计、字符 5-gram LM 与三模型融合结果，见
+[`reports/raw_winner_p2_structural_probe.md`](reports/raw_winner_p2_structural_probe.md)；论文式实验与限制说明见
+[`paper/manuscript.md`](paper/manuscript.md)。P2 结果只支持短预算适配效率结论，不代表充分收敛后的架构排名。
+
 ### P0：先建立可比较的误差基线
 
 1. **固定评测协议。** 锁定当前 checkpoint、manifest、文本规范化、音频顺序和提交校验，保存一份不可变的 69.49 基线。
