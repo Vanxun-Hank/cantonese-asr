@@ -129,7 +129,7 @@ def strict_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, allow_nan=False)
 
 
-def percentile(values: list[int], quantile: float) -> float:
+def percentile(values: list[int] | list[float], quantile: float) -> float:
     if not values:
         return 0.0
     ordered = sorted(values)
@@ -362,6 +362,7 @@ def evaluate_surface(
             )
 
     surface_started = time.perf_counter()
+    inference_seconds: list[float] = []
     for start in range(0, len(listed_paths), batch_size):
         batch_paths = listed_paths[start : start + batch_size]
         audio = [
@@ -382,6 +383,9 @@ def evaluate_surface(
         if attention_mask is not None:
             attention_mask = attention_mask.to(device)
         generate_kwargs = generation_kwargs(arm, generation_max_length)
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        inference_started = time.perf_counter()
         with torch.inference_mode():
             if arm == "D7_MBR_B5":
                 generated = model.generate(
@@ -465,6 +469,12 @@ def evaluate_surface(
                         texts, raw_token_rows, raw_sequence_scores
                     )
                 ]
+        if device.type == "cuda":
+            torch.cuda.synchronize(device)
+        batch_inference_seconds = time.perf_counter() - inference_started
+        inference_seconds.extend(
+            [batch_inference_seconds / len(batch_paths)] * len(batch_paths)
+        )
 
         for offset, (path, selection) in enumerate(zip(batch_paths, selected)):
             raw_text = str(selection["raw_text"])
@@ -572,12 +582,35 @@ def evaluate_surface(
     )
     token_lengths = [int(row["generated_token_count"]) for row in sample_rows]
     distribution = Counter(token_lengths)
+    total_audio_seconds = sum(
+        float(librosa.get_duration(path=resolve_surface_audio(project_root, path)))
+        for path in listed_paths
+    )
+    total_inference_seconds = sum(inference_seconds)
     summary = {
         "surface": surface,
         "manifest": str(manifest),
         "reference_field": reference_field,
         "rows": len(sample_rows),
         "runtime_seconds": time.perf_counter() - surface_started,
+        "inference_benchmark": {
+            "batch_size": batch_size,
+            "samples": len(inference_seconds),
+            "total_generation_seconds": total_inference_seconds,
+            "latency_seconds": {
+                "mean": mean(inference_seconds),
+                "p50": percentile(inference_seconds, 0.50),
+                "p90": percentile(inference_seconds, 0.90),
+                "p95": percentile(inference_seconds, 0.95),
+                "p99": percentile(inference_seconds, 0.99),
+                "max": max(inference_seconds),
+            },
+            "throughput_samples_per_second": (
+                len(inference_seconds) / total_inference_seconds
+            ),
+            "audio_seconds": total_audio_seconds,
+            "real_time_factor": total_inference_seconds / total_audio_seconds,
+        },
         "metrics": official,
         "operations": {
             "substitutions": diagnostic["substitutions"],
