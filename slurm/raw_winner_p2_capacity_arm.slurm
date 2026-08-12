@@ -67,7 +67,7 @@ if [[ ${P2_EXTERNAL_EVAL_ONLY:-0} == 1 ]]; then
   # The registered endpoint is still saved at STEPS, but expensive FSDP
   # autoregressive validation runs once in the independent evaluator instead
   # of being duplicated inside every distributed rank.
-  COMMON+=(--final-refit)
+  COMMON+=(--final-refit --skip-final-evaluation)
 else
   COMMON+=(--validation-manifest artifacts/manifests/validation.jsonl)
 fi
