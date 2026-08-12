@@ -20,7 +20,7 @@ from cantonese_asr.p2_analysis import CharacterNgramLM, mbr_medoid, rerank_candi
 def parse_args() -> argparse.Namespace:
     p=argparse.ArgumentParser(); p.add_argument("--config",type=Path,required=True); p.add_argument("--train-manifest",type=Path,required=True)
     p.add_argument("--validation-reference",type=Path,required=True); p.add_argument("--public-reference",type=Path,required=True); p.add_argument("--ood-reference",type=Path,required=True)
-    p.add_argument("--d7-root",type=Path,required=True); p.add_argument("--raw-root",type=Path,required=True); p.add_argument("--noise-root",type=Path,required=True); p.add_argument("--full-root",type=Path,required=True); p.add_argument("--output-dir",type=Path,required=True); return p.parse_args()
+    p.add_argument("--d7-validation-root",type=Path,required=True); p.add_argument("--d7-diagnostics-root",type=Path,required=True); p.add_argument("--raw-root",type=Path,required=True); p.add_argument("--noise-root",type=Path,required=True); p.add_argument("--full-root",type=Path,required=True); p.add_argument("--output-dir",type=Path,required=True); return p.parse_args()
 
 
 def text(row):
@@ -32,6 +32,10 @@ def text(row):
 def refs(path): return [(str(r["audio_path"]),text(r)) for r in read_jsonl(path)]
 
 
+def same_audio(left: str, right: str) -> bool:
+    return Path(left).name == Path(right).name
+
+
 def metrics(references,predictions):
     m=compute_official_metrics(references,predictions); m["diagnostics"]=compute_diagnostic_metrics(references,predictions); return m
 
@@ -41,7 +45,7 @@ def aligned_predictions(path, reference_rows):
     if len(rows)!=len(reference_rows): raise ValueError(f"row mismatch: {path}")
     values=[]
     for row,(audio,_) in zip(rows,reference_rows):
-        if str(row["audio_path"])!=audio: raise ValueError(f"audio order mismatch: {path}")
+        if not same_audio(str(row["audio_path"]), audio): raise ValueError(f"audio order mismatch: {path}")
         values.append(str(row["pred_text"]))
     return values
 
@@ -52,11 +56,13 @@ def main():
     lm_matrix={"training_manifest":str(a.train_manifest),"training_manifest_sha256":sha256_file(a.train_manifest),"selection_surface":"validation","lambdas":{}}
     chosen=None; chosen_key=None
     for split,reference_path in (("validation",a.validation_reference),("public",a.public_reference),("ood",a.ood_reference)):
-        reference_rows=refs(reference_path); sidecars=read_jsonl(a.d7_root/split/"generation_tokens.jsonl")
+        reference_rows=refs(reference_path)
+        d7_root = a.d7_validation_root if split == "validation" else a.d7_diagnostics_root
+        sidecars=read_jsonl(d7_root/split/"generation_tokens.jsonl")
         if len(sidecars)!=len(reference_rows): raise ValueError(f"D7 row mismatch {split}")
         outputs={weight:[] for weight in cfg["lm"]["lambdas"]}; oracle=[]; mbr=[]; top1=[]
         for sidecar,(audio,reference) in zip(sidecars,reference_rows):
-            if str(sidecar["audio_path"])!=audio: raise ValueError(f"D7 order mismatch {split}")
+            if not same_audio(str(sidecar["audio_path"]), audio): raise ValueError(f"D7 order mismatch {split}")
             candidates=sidecar["candidates"]; texts=[str(c["text"]) for c in candidates]; scores=[float(c["sequence_score"]) for c in candidates]; lm_scores=[lm.score(x) for x in texts]
             for weight in outputs: outputs[weight].append(texts[rerank_candidates(texts,scores,lm_scores,float(weight))])
             top1.append(texts[0]); mbr.append(str(sidecar["pred_text"])); oracle.append(min(texts,key=lambda x:levenshtein_ops(list(normalize_reference(reference)),list(normalize_prediction(x)))[0]))

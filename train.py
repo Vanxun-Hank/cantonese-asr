@@ -718,6 +718,8 @@ class JsonlMetricsCallback(TrainerCallback):
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def _write(self, event: str, state: Any, values: dict[str, Any]) -> None:
+        if int(os.environ.get("RANK", "0")) != 0:
+            return
         record: dict[str, Any] = {
             "event": event,
             "trial": self.trial_name,
@@ -2072,6 +2074,7 @@ def main() -> None:
     else:
         best_model_dir = args.output_dir / "best_model"
         trainer.save_model(str(best_model_dir))
+    if is_primary_process:
         processor.save_pretrained(best_model_dir)
         model.generation_config.save_pretrained(best_model_dir)
     if not args.skip_final_evaluation:
