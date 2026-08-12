@@ -6,7 +6,11 @@ from cantonese_asr.training_sampling import (
     FixedExposureSampler,
     fixed_exposure_topology_receipt,
 )
-from scripts.convert_openai_whisper_checkpoint import renamed_state_dict
+from scripts.convert_openai_whisper_checkpoint import (
+    model_weight_files,
+    renamed_state_dict,
+    weight_surface_receipt,
+)
 
 
 def test_fixed_exposure_sampler_is_sequential() -> None:
@@ -56,3 +60,23 @@ def test_openai_whisper_key_conversion() -> None:
         "encoder.layers.0.self_attn.q_proj.weight",
         "decoder.embed_tokens.weight",
     }
+
+
+def test_sharded_weight_surface_receipt(tmp_path) -> None:
+    first = tmp_path / "model-00001-of-00002.safetensors"
+    second = tmp_path / "model-00002-of-00002.safetensors"
+    first.write_bytes(b"first")
+    second.write_bytes(b"second")
+    (tmp_path / "model.safetensors.index.json").write_text(
+        '{"weight_map":{"a":"model-00001-of-00002.safetensors",'
+        '"b":"model-00002-of-00002.safetensors"}}',
+        encoding="utf-8",
+    )
+    assert [path.name for path in model_weight_files(tmp_path)] == [
+        "model.safetensors.index.json",
+        "model-00001-of-00002.safetensors",
+        "model-00002-of-00002.safetensors",
+    ]
+    receipt = weight_surface_receipt(tmp_path)
+    assert receipt["sharded"] is True
+    assert receipt["total_bytes"] > first.stat().st_size + second.stat().st_size

@@ -48,6 +48,45 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def model_weight_files(output_dir: Path) -> list[Path]:
+    """Return the deterministic HF weight surface, including sharded models."""
+    single = output_dir / "model.safetensors"
+    if single.is_file():
+        return [single]
+    index = output_dir / "model.safetensors.index.json"
+    if not index.is_file():
+        return []
+    payload = json.loads(index.read_text(encoding="utf-8"))
+    shards = sorted({str(value) for value in payload.get("weight_map", {}).values()})
+    files = [index, *(output_dir / shard for shard in shards)]
+    if not shards or any(not path.is_file() for path in files):
+        raise FileNotFoundError("incomplete sharded safetensors surface")
+    return files
+
+
+def weight_surface_receipt(output_dir: Path) -> dict[str, object]:
+    files = model_weight_files(output_dir)
+    if not files:
+        raise FileNotFoundError(f"no safetensors weights under {output_dir}")
+    records = [
+        {
+            "path": path.name,
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+        }
+        for path in files
+    ]
+    canonical = "\n".join(
+        f'{item["path"]}\t{item["sha256"]}\t{item["bytes"]}' for item in records
+    )
+    return {
+        "files": records,
+        "surface_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+        "total_bytes": sum(int(item["bytes"]) for item in records),
+        "sharded": len(files) > 1,
+    }
+
+
 def renamed_state_dict(state_dict: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     converted: dict[str, torch.Tensor] = {}
     for key, value in state_dict.items():
@@ -67,6 +106,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-sha256", required=True)
+    parser.add_argument(
+        "--receipt-only",
+        action="store_true",
+        help="write a receipt for an already-converted, complete weight surface",
+    )
     return parser.parse_args()
 
 
@@ -79,34 +123,38 @@ def main() -> None:
         if not (args.output_dir / required).is_file():
             raise FileNotFoundError(args.output_dir / required)
 
-    checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
-    raw_state = checkpoint["model_state_dict"]
-    projection = raw_state["decoder.token_embedding.weight"]
-    state_dict = renamed_state_dict(raw_state)
-
-    config = WhisperConfig.from_pretrained(args.output_dir, local_files_only=True)
-    model = WhisperForConditionalGeneration(config)
-    missing, unexpected = model.model.load_state_dict(state_dict, strict=False)
     allowed_missing = {
         "encoder.embed_positions.weights",
         "decoder.embed_positions.weights",
     }
-    if set(missing) - allowed_missing or unexpected:
-        raise ValueError({"missing": missing, "unexpected": unexpected})
-    model.proj_out.weight.data.copy_(projection)
-    model.generation_config = GenerationConfig.from_pretrained(
-        args.output_dir, local_files_only=True
-    )
-    model.save_pretrained(args.output_dir, safe_serialization=True)
-    model_path = args.output_dir / "model.safetensors"
+    if args.receipt_only:
+        missing = sorted(allowed_missing)
+        unexpected: list[str] = []
+    else:
+        checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+        raw_state = checkpoint["model_state_dict"]
+        projection = raw_state["decoder.token_embedding.weight"]
+        state_dict = renamed_state_dict(raw_state)
+
+        config = WhisperConfig.from_pretrained(args.output_dir, local_files_only=True)
+        model = WhisperForConditionalGeneration(config)
+        missing, unexpected = model.model.load_state_dict(state_dict, strict=False)
+        if set(missing) - allowed_missing or unexpected:
+            raise ValueError({"missing": missing, "unexpected": unexpected})
+        model.proj_out.weight.data.copy_(projection)
+        model.generation_config = GenerationConfig.from_pretrained(
+            args.output_dir, local_files_only=True
+        )
+        model.save_pretrained(args.output_dir, safe_serialization=True)
+    weight_surface = weight_surface_receipt(args.output_dir)
     receipt = {
         "source": str(args.checkpoint.resolve()),
         "source_sha256": actual_sha,
-        "output": str(model_path.resolve()),
-        "output_sha256": sha256_file(model_path),
-        "output_bytes": model_path.stat().st_size,
+        "output": str(args.output_dir.resolve()),
+        "weight_surface": weight_surface,
         "missing_keys": missing,
         "unexpected_keys": unexpected,
+        "receipt_only": args.receipt_only,
     }
     (args.output_dir / "openai_conversion_receipt.json").write_text(
         json.dumps(receipt, indent=2) + "\n", encoding="utf-8"

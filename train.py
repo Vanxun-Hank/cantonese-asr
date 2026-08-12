@@ -607,13 +607,22 @@ class ControlledSamplingTrainer(Seq2SeqTrainer):
         inputs = dict(inputs)
         for key in self.augmentation_metadata_keys:
             inputs.pop(key, None)
-        return super().prediction_step(
-            model,
-            inputs,
-            prediction_loss_only,
-            ignore_keys=ignore_keys,
-            **gen_kwargs,
-        )
+        # FSDP's full-parameter summon materializes FP32 weights during
+        # generation.  Keep generation under the same BF16 autocast contract
+        # as training; otherwise BF16 hidden states can reach FP32 layer-norm
+        # weights and fail before the first decoded token.
+        with torch.autocast(
+            device_type="cuda",
+            dtype=torch.bfloat16,
+            enabled=bool(torch.cuda.is_available() and self.args.bf16),
+        ):
+            return super().prediction_step(
+                model,
+                inputs,
+                prediction_loss_only,
+                ignore_keys=ignore_keys,
+                **gen_kwargs,
+            )
 
     def create_scheduler(
         self,
