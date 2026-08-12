@@ -1059,6 +1059,12 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Enable full-shard FSDP with Whisper layer auto-wrap.",
     )
+    parser.add_argument(
+        "--skip-final-evaluation",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Skip the post-training duplicate evaluation (useful for smoke tests).",
+    )
     return parser.parse_args()
 
 
@@ -2068,6 +2074,7 @@ def main() -> None:
         trainer.save_model(str(best_model_dir))
         processor.save_pretrained(best_model_dir)
         model.generation_config.save_pretrained(best_model_dir)
+    if not args.skip_final_evaluation:
         final_metrics = trainer.evaluate(metric_key_prefix="final")
         trainer.save_metrics("final", final_metrics)
 

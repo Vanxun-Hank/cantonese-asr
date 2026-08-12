@@ -39,6 +39,12 @@ OUT=$OUT_ROOT/$ARM
 test -s "$EXPOSURE"
 test -d "$MODEL"
 test ! -e "$OUT"
+ACTUAL_ROWS=$(wc -l < "$EXPOSURE")
+EXPECTED_ROWS=$((STEPS * WORLD * BATCH * ACCUM))
+if [[ "$ACTUAL_ROWS" -ne "$EXPECTED_ROWS" ]]; then
+  echo "Exposure rows $ACTUAL_ROWS != required $EXPECTED_ROWS" >&2
+  exit 33
+fi
 
 COMMON=(
   train.py --model "$MODEL" --train-manifest "$EXPOSURE"
@@ -54,6 +60,9 @@ COMMON=(
   --generation-max-length 225 --bf16 --tf32 --gradient-checkpointing
   --no-apply-spec-augment --mask-time-prob 0 --mask-feature-prob 0
 )
+if [[ ${P2_SMOKE:-0} == 1 ]]; then
+  COMMON+=(--max-validation-samples 32 --max-train-samples "$ACTUAL_ROWS" --skip-final-evaluation)
+fi
 if [[ "$METHOD" == lora ]]; then
   COMMON+=(--lora --lora-r 8 --lora-alpha 16 --lora-dropout 0.05 --lora-target-scope all_attention_qv)
 fi
