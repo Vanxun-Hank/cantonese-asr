@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import torch
+
 from cantonese_asr.training_sampling import (
     FixedExposureSampler,
     fixed_exposure_topology_receipt,
 )
+from scripts.convert_openai_whisper_checkpoint import renamed_state_dict
 
 
 def test_fixed_exposure_sampler_is_sequential() -> None:
@@ -39,3 +42,17 @@ def test_fixed_exposure_rejects_partial_global_batch() -> None:
         assert "not divisible" in str(error)
     else:
         raise AssertionError("partial global batch must fail")
+
+
+def test_openai_whisper_key_conversion() -> None:
+    tensor = torch.ones(1)
+    converted = renamed_state_dict(
+        {
+            "encoder.blocks.0.attn.query.weight": tensor,
+            "decoder.token_embedding.weight": tensor,
+        }
+    )
+    assert set(converted) == {
+        "encoder.layers.0.self_attn.q_proj.weight",
+        "decoder.embed_tokens.weight",
+    }
