@@ -16,12 +16,12 @@
 ## Findings
 
 - Capacity improves matched-budget adaptation efficiency monotonically: Small Full `0.6353/0.1624`, Medium Full `0.7151/0.1341`, Large-v2 Full `0.8034/0.1029` (tol2/CER).
-- Large-v2 Full passes the registered capacity threshold versus Small Full.
+- Large-v2 Full passes the registered capacity threshold versus Small Full: `True`.
 - LoRA materially reduces trainable parameters and memory, but under this short budget it does not match Full SFT accuracy; this is adaptation-efficiency evidence, not a convergence claim.
 - All three architectures use the same tokenizer hash (`cd04663643cab3e7a63a1f4cf2d7913e957183dbfb1b3aaebd97992083b8af36`); there are no UNKs or replacement characters in the audited references, but roughly 29–35% of individual reference characters tokenize to multiple tokens, so token inefficiency is measurable without proving it is the dominant error source.
-- Leakage-guarded character 5-gram reranking selects `lambda=0.0`; therefore the LM did not improve validation selection over ASR scores.
-- Among the two registered static fusion rules, validation selects character-edit MBR. It reaches validation tol2 `0.8704` and CER `0.0823`, slightly trailing the best component NOISE_S43 (`0.8732/0.0821`); on Public it reaches `0.8984/0.0791` and exceeds all three components.
-- Large-v2 Full demonstrates strong short-budget capacity and Public adaptation, but it is not a replacement for RAW_WINNER: its fixed-validation tol2 remains materially lower (`0.8034` versus `0.8547`) and its OOD CER is worse (`0.3459` versus `0.3404`). It requires a domain-aligned continuation study before deployment.
+- Leakage-guarded character 5-gram reranking selects `lambda=0.0`; therefore the LM did not improve the validation selection over ASR scores.
+- Among the two registered static fusion rules, validation selects `mbr`. MBR reaches validation tol2 `0.8704` and CER `0.0823`, slightly trailing the best component NOISE_S43; on Public it reaches `0.8984/0.0791` and exceeds all three components.
+- Large-v2 Full demonstrates strong short-budget capacity and Public adaptation, but it is not a replacement for RAW_WINNER: its fixed-validation tol2 remains materially lower and its OOD CER is worse. It requires a domain-aligned continuation study before deployment.
 - `no_eos_count` is reported separately from true repeated runaway. Medium/Large generation sidecars omit EOS in this Transformers path even when decoding terminates normally; repeated-runaway, max-length and replacement-character diagnostics remain the stability indicators.
 
 ## Registered questions
@@ -42,6 +42,5 @@
 ## Reproducibility
 
 - Fixed exposure: 2,400 unique `external73` rows, seed 42, globally identical 16-example optimizer steps across 1/2/4 GPU topologies.
-- Fixed exposure SHA-256: `ee072139724bfe27f6572b61eb03fa3abf1e078da4d0e1098af7b11f92555b8a`.
-- Decode: beam 2, no-repeat n-gram 4, repetition penalty 1.05, `max_length=225`, Chinese transcription.
-- Full configuration, checkpoint weight surfaces, SHA-256 values, per-surface errors and resource receipts are in the synchronized machine-readable P2 artifact directory.
+- Decode: beam 2, no-repeat n-gram 4, repetition penalty 1.05, max_length 225, Chinese transcription.
+- Full configuration, checkpoint weight surfaces, SHA-256 values, per-surface errors and resource receipts are in `artifacts/raw_winner_p2/final/capacity_matrix.json`.
