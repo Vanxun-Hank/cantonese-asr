@@ -2062,6 +2062,7 @@ def main() -> None:
         trainer.save_model(str(final_model_dir))
         processor.save_pretrained(final_model_dir)
         model.generation_config.save_pretrained(final_model_dir)
+        export_model_dir = final_model_dir
         receipt = {
             "mode": "final_refit",
             "selection_policy": "fixed_last_epoch_no_validation_selection",
@@ -2083,9 +2084,10 @@ def main() -> None:
     else:
         best_model_dir = args.output_dir / "best_model"
         trainer.save_model(str(best_model_dir))
+        export_model_dir = best_model_dir
     if is_primary_process:
-        processor.save_pretrained(best_model_dir)
-        model.generation_config.save_pretrained(best_model_dir)
+        processor.save_pretrained(export_model_dir)
+        model.generation_config.save_pretrained(export_model_dir)
     if not args.skip_final_evaluation:
         final_metrics = trainer.evaluate(metric_key_prefix="final")
         trainer.save_metrics("final", final_metrics)

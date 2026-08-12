@@ -49,7 +49,6 @@ fi
 
 COMMON=(
   train.py --model "$MODEL" --train-manifest "$EXPOSURE"
-  --validation-manifest artifacts/manifests/validation.jsonl
   --project-root "$PROJECT_DIR" --output-dir "$OUT" --trial-name "$ARM"
   --max-steps "$STEPS" --batch-size "$BATCH" --eval-batch-size 1
   --gradient-accumulation-steps "$ACCUM" --learning-rate "$LR"
@@ -69,6 +68,8 @@ if [[ ${P2_EXTERNAL_EVAL_ONLY:-0} == 1 ]]; then
   # autoregressive validation runs once in the independent evaluator instead
   # of being duplicated inside every distributed rank.
   COMMON+=(--final-refit)
+else
+  COMMON+=(--validation-manifest artifacts/manifests/validation.jsonl)
 fi
 if [[ "$METHOD" == lora ]]; then
   COMMON+=(--lora --lora-r 8 --lora-alpha 16 --lora-dropout 0.05 --lora-target-scope all_attention_qv)
