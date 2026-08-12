@@ -183,7 +183,7 @@ def main() -> None:
     lm = load(analysis / "lm_matrix.json")
     fusion = load(analysis / "fusion_matrix.json")
     matrix["tokenizer"] = {
-        "all_tokenizers_identical": bool(tokenizer["all_tokenizers_identical"]),
+        "all_tokenizers_identical": bool(tokenizer["tokenizers_identical"]),
         "tokenizer_hashes": sorted(
             {item["tokenizer_hash"] for item in tokenizer["models"].values()}
         ),
