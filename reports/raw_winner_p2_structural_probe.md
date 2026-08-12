@@ -20,7 +20,8 @@
 - LoRA materially reduces trainable parameters and memory, but under this short budget it does not match Full SFT accuracy; this is adaptation-efficiency evidence, not a convergence claim.
 - All three architectures use the same tokenizer hash (`cd04663643cab3e7a63a1f4cf2d7913e957183dbfb1b3aaebd97992083b8af36`); there are no UNKs or replacement characters in the audited references, but roughly 29–35% of individual reference characters tokenize to multiple tokens, so token inefficiency is measurable without proving it is the dominant error source.
 - Leakage-guarded character 5-gram reranking selects `lambda=0.0`; therefore the LM did not improve validation selection over ASR scores.
-- Three-model fusion selects character-edit MBR. Validation reaches tol2 `0.8704` and CER `0.0823`; Public reaches tol2 `0.8984` and CER `0.0791`.
+- Among the two registered static fusion rules, validation selects character-edit MBR. It reaches validation tol2 `0.8704` and CER `0.0823`, slightly trailing the best component NOISE_S43 (`0.8732/0.0821`); on Public it reaches `0.8984/0.0791` and exceeds all three components.
+- Large-v2 Full demonstrates strong short-budget capacity and Public adaptation, but it is not a replacement for RAW_WINNER: its fixed-validation tol2 remains materially lower (`0.8034` versus `0.8547`) and its OOD CER is worse (`0.3459` versus `0.3404`). It requires a domain-aligned continuation study before deployment.
 - `no_eos_count` is reported separately from true repeated runaway. Medium/Large generation sidecars omit EOS in this Transformers path even when decoding terminates normally; repeated-runaway, max-length and replacement-character diagnostics remain the stability indicators.
 
 ## Registered questions
@@ -29,7 +30,7 @@
 2. **What is the Full-SFT/LoRA trade-off?** LoRA reduces trainable parameters and peak memory substantially, but every LoRA arm is worse than its matched Full-SFT arm under this short budget. This does not establish the fully converged ordering.
 3. **Is the standard Whisper tokenizer a demonstrated Cantonese bottleneck?** No. The tokenizers and hashes are identical and audited references contain no unknown or replacement tokens. Multi-token encoding of Cantonese characters is measurable, but this probe does not show that vocabulary modification would improve ASR.
 4. **Does the character LM exploit the 5-best oracle space?** No. Validation selects lambda zero even though an oracle gap exists, so this training-text-only 5-gram score does not identify the better hypotheses reliably.
-5. **Are the three existing models complementary?** Yes, modestly. Character-edit MBR improves validation and Public over the individual top-1 surfaces, while the oracle remains better and quantifies residual fusion headroom.
+5. **Are the three existing models complementary?** Partially. The oracle and the Public MBR gain demonstrate diversity, but validation MBR slightly trails the best component. Static consensus is therefore not consistently superior across surfaces.
 
 ## Limitations
 

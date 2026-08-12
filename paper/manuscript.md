@@ -16,7 +16,7 @@ The Small, Medium, and Large-v2 checkpoints use an identical tokenizer hash. Acr
 
 ### Prediction fusion
 
-We further test prediction complementarity among RAW_WINNER, NOISE_S43, and FULL_LR1E6_S43 without retraining. After verifying row order and reference parity on validation, Public, and OOD, we compare character-edit-distance MBR, character-level ROVER, and a best-of-three oracle. Validation selects MBR, which achieves 0.8704 tol2 and 0.0823 CER; on Public it reaches 0.8984 tol2 and 0.0791 CER. The best-of-three oracle remains stronger, showing that useful diversity exists but that the static consensus rule captures only part of it. This is an offline analysis whose deployment cost is approximately the combined inference cost of three component models.
+We further test prediction complementarity among RAW_WINNER, NOISE_S43, and FULL_LR1E6_S43 without retraining. After verifying row order and reference parity on validation, Public, and OOD, we compare character-edit-distance MBR, character-level ROVER, and a best-of-three oracle. Among the registered fusion rules, validation selects MBR, which achieves 0.8704 tol2 and 0.0823 CER. This slightly trails the best individual validation component, NOISE_S43 (0.8732/0.0821), while the Public MBR result of 0.8984/0.0791 exceeds all three components. The best-of-three oracle remains stronger, showing useful diversity without proving that static consensus is uniformly better across surfaces. This is an offline analysis whose deployment cost is approximately the combined inference cost of three component models.
 
 ### Limitations and claim boundary
 
@@ -28,7 +28,7 @@ The capacity comparison uses a deliberately short schedule and one registered le
 - **Claim:** LoRA is accuracy-equivalent to Full SFT. **Evidence:** all matched LoRA arms trail Full SFT. **Status:** not supported.
 - **Claim:** The standard Whisper tokenizer is the dominant Cantonese bottleneck. **Evidence:** identical tokenizers, zero unknown/replacement tokens, but measurable multi-token characters. **Status:** not supported.
 - **Claim:** The tested character 5-gram reranker improves recognition. **Evidence:** validation selects lambda zero. **Status:** not supported.
-- **Claim:** Existing models contain exploitable prediction diversity. **Evidence:** validation-selected MBR improves over individual top-1 surfaces and a stronger oracle remains. **Status:** supported.
+- **Claim:** Existing models contain exploitable prediction diversity. **Evidence:** MBR improves Public but slightly trails the best validation component; the oracle is stronger on every surface. **Status:** partially supported; static fusion is not uniformly superior.
 
 ### Reviewer-facing self-review
 
