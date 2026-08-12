@@ -64,6 +64,12 @@ COMMON=(
 if [[ ${P2_SMOKE:-0} == 1 ]]; then
   COMMON+=(--max-validation-samples 32 --max-train-samples "$ACTUAL_ROWS" --skip-final-evaluation)
 fi
+if [[ ${P2_EXTERNAL_EVAL_ONLY:-0} == 1 ]]; then
+  # The registered endpoint is still saved at STEPS, but expensive FSDP
+  # autoregressive validation runs once in the independent evaluator instead
+  # of being duplicated inside every distributed rank.
+  COMMON+=(--final-refit)
+fi
 if [[ "$METHOD" == lora ]]; then
   COMMON+=(--lora --lora-r 8 --lora-alpha 16 --lora-dropout 0.05 --lora-target-scope all_attention_qv)
 fi
