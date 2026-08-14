@@ -1,0 +1,60 @@
+{
+  "round": "raw_winner_p2_structural_probe",
+  "claim_boundary": "150-step matched-budget adaptation probe; not convergence",
+  "seed": 42,
+  "external73": {
+    "path": "artifacts/manifests/external/round2/external73.jsonl",
+    "sha256": "2ba7edef6811b0d3e96b3347aa70f4237ec27735652d3d313bce62525f1cdea6",
+    "fixed_exposure_rows": 2400
+  },
+  "validation_manifest": "artifacts/manifests/validation.jsonl",
+  "models": {
+    "small": "artifacts/models/whisper-small",
+    "medium": "artifacts/models/whisper-medium",
+    "large_v2": "artifacts/models/whisper-large-v2"
+  },
+  "training": {
+    "max_steps": 150,
+    "global_effective_batch": 16,
+    "optimizer": "adamw_torch",
+    "weight_decay": 0.01,
+    "scheduler": "cosine",
+    "warmup_steps": 8,
+    "max_grad_norm": 1.0,
+    "bf16": true,
+    "tf32": true,
+    "gradient_checkpointing": true,
+    "augmentation": "none"
+  },
+  "decode": {
+    "num_beams": 2,
+    "do_sample": false,
+    "no_repeat_ngram_size": 4,
+    "repetition_penalty": 1.05,
+    "max_length": 225,
+    "language": "zh",
+    "task": "transcribe"
+  },
+  "lora": {
+    "r": 8,
+    "alpha": 16,
+    "dropout": 0.05,
+    "target_scope": "all_attention_qv"
+  },
+  "fsdp": {
+    "mode": "full_shard auto_wrap",
+    "layer_classes": ["WhisperEncoderLayer", "WhisperDecoderLayer"],
+    "use_orig_params": true,
+    "cpu_offload": false
+  },
+  "arms": {
+    "SMALL_FULL": {"model": "small", "world_size": 1, "batch": 8, "accum": 2, "lr": 1e-5, "method": "full"},
+    "SMALL_LORA": {"model": "small", "world_size": 1, "batch": 8, "accum": 2, "lr": 1e-4, "method": "lora"},
+    "MEDIUM_FULL": {"model": "medium", "world_size": 2, "batch": 2, "accum": 4, "lr": 1e-5, "method": "full_fsdp", "oom_fallback": {"batch": 1, "accum": 8}},
+    "MEDIUM_LORA": {"model": "medium", "world_size": 1, "batch": 4, "accum": 4, "lr": 1e-4, "method": "lora"},
+    "LARGE_V2_FULL": {"model": "large_v2", "world_size": 4, "batch": 1, "accum": 4, "lr": 1e-5, "method": "full_fsdp"},
+    "LARGE_V2_LORA": {"model": "large_v2", "world_size": 1, "batch": 1, "accum": 16, "lr": 1e-4, "method": "lora"}
+  },
+  "lm": {"order": 5, "alpha": 0.1, "lambdas": [0.0, 0.1, 0.2, 0.4, 0.8]},
+  "fusion_models": ["RAW_WINNER", "NOISE_S43", "FULL_LR1E6_S43"]
+}

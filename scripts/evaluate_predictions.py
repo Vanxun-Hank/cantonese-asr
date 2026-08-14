@@ -19,7 +19,11 @@ if str(PROJECT_ROOT) not in sys.path:
 from cantonese_asr.io import read_jsonl
 from cantonese_asr.metrics import (
     build_error_analysis,
+    compute_diagnostic_metrics,
     compute_official_metrics,
+    levenshtein_ops,
+    normalize_prediction,
+    normalize_reference,
     to_simplified,
 )
 
@@ -132,6 +136,65 @@ def main() -> None:
         [row["reference"] for row in analysis_rows],
         [row["prediction"] for row in analysis_rows],
     )
+    metrics["diagnostics"] = compute_diagnostic_metrics(
+        [row["reference"] for row in analysis_rows],
+        [row["prediction"] for row in analysis_rows],
+    )
+    total_reference_characters = sum(
+        max(1, len(normalize_reference(row["reference"])))
+        for row in analysis_rows
+    )
+    sample_scores = []
+    for row in analysis_rows:
+        normalized_reference = normalize_reference(row["reference"])
+        normalized_prediction = normalize_prediction(row["prediction"])
+        distance, _ = levenshtein_ops(
+            list(normalized_reference),
+            list(normalized_prediction),
+        )
+        denominator = max(1, len(normalized_reference))
+        sample_scores.append(
+            {
+                "audio_path": row["audio_path"],
+                "reference": normalized_reference,
+                "prediction": normalized_prediction,
+                "reference_characters": denominator,
+                "edit_distance": distance,
+                "utterance_cer": distance / denominator,
+                "corpus_cer_contribution": (
+                    distance / total_reference_characters
+                    if total_reference_characters
+                    else 0.0
+                ),
+            }
+        )
+    top_by_utterance = sorted(
+        sample_scores,
+        key=lambda row: (
+            -float(row["utterance_cer"]),
+            -int(row["edit_distance"]),
+            str(row["audio_path"]),
+        ),
+    )[:20]
+    top_by_contribution = sorted(
+        sample_scores,
+        key=lambda row: (
+            -int(row["edit_distance"]),
+            -float(row["utterance_cer"]),
+            str(row["audio_path"]),
+        ),
+    )[:20]
+    metrics["diagnostics"]["total_reference_characters"] = (
+        total_reference_characters
+    )
+    metrics["diagnostics"]["top20_by_utterance_cer"] = top_by_utterance
+    metrics["diagnostics"]["top20_by_corpus_contribution"] = (
+        top_by_contribution
+    )
+    metrics["diagnostics"]["top20_corpus_contribution_sum"] = sum(
+        float(row["corpus_cer_contribution"])
+        for row in top_by_contribution
+    )
     diagnostics = build_error_analysis(analysis_rows)
     args.report_dir.mkdir(parents=True, exist_ok=True)
     (args.report_dir / "metrics.json").write_text(
@@ -149,6 +212,13 @@ def main() -> None:
         )
     (args.report_dir / "error_examples.json").write_text(
         json.dumps(diagnostics["error_examples"], ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (args.report_dir / "sample_scores.jsonl").write_text(
+        "".join(
+            json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n"
+            for row in sample_scores
+        ),
         encoding="utf-8",
     )
     with (args.report_dir / "top_confusions.csv").open(
