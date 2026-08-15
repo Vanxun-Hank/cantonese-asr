@@ -49,6 +49,8 @@ training-time revision. WenetSpeech-Yue is used as the broader acoustic source.
 - [Model weights and model card](https://huggingface.co/cantonese-asr-lab/whisper-small-cantonese-w500-adaptive)
 - [Training and evaluation repository](https://github.com/Vanxun-Hank/cantonese-asr)
 
-Author names, affiliations, funding, competing interests, ethics, AI-use
-disclosure, model licensing, and the exact training-time data snapshot remain
-explicit author/Mentor review items in v0.4.
+The released model weights are available under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Information
+identifying the exact training-time task-data snapshot is available from the
+corresponding author by email; the contact address will be added with the final
+author record. Author names and the AI-use disclosure remain to be confirmed.

@@ -1,6 +1,6 @@
 # A Source-Alternating Curriculum for Cantonese Speech Recognition with Whisper
 
-**Authors and affiliations:** [[TODO: human-authored record]]
+**Authors:** [[TO BE CONFIRMED BY THE AUTHOR TEAM]]
 
 ## Abstract
 
@@ -601,14 +601,17 @@ derived.
 The released weights and model card are available from [Hugging
 Face](https://huggingface.co/cantonese-asr-lab/whisper-small-cantonese-w500-adaptive),
 and training, evaluation, packaging, and verification code is available from
-the [project repository](https://github.com/Vanxun-Hank/cantonese-asr).
+the [project repository](https://github.com/Vanxun-Hank/cantonese-asr). The
+released model weights are licensed under the Apache License 2.0.
 Reproducing the reported inference path requires the weight files, the
 language/task prompt, decoding arguments, text normalizer, and example order.
 Training data is not bundled with the model. Users must obtain each source
 under its own access and license terms and reconstruct only permitted
-manifests. The repository contains versioned configurations, code, and compact
-reports. Hashes identify larger experiment artifacts that are not distributed
-with a standard Git clone.
+manifests. Information identifying the exact training-time task-data snapshot
+is available from the corresponding author by email; the contact address will
+be added with the final author record. The repository contains versioned
+configurations, code, and compact reports. Hashes identify larger experiment
+artifacts that are not distributed with a standard Git clone.
 
 ## 5. Limitations
 
@@ -648,11 +651,9 @@ traditional-character output, named entities, or semantic equivalence.
 Aggregate edits do not identify the acoustic or linguistic source of OOD
 errors without a separately designed stratified analysis.
 
-Dataset licenses, privacy conditions, redistribution boundaries, authorship,
-affiliations, funding, conflicts, ethics, and the venue-specific AI disclosure
-require final author and Mentor review. The training-time snapshot of each
-task-provided resource must also be recorded before a submission-ready version
-is declared.
+Dataset access, privacy conditions, and redistribution boundaries remain
+governed by the upstream sources. The final author record, corresponding-author
+email, and venue-specific AI-use disclosure remain to be confirmed.
 
 ## 6. Conclusion
 
@@ -674,29 +675,19 @@ curriculum to Large-v2 with longer training and multi-seed evaluation.
 
 ## Author Contributions
 
-[[TODO: human-approved CRediT statement.]]
-
-## Funding
-
-[[TODO: verified statement or verified not-applicable declaration.]]
-
-## Competing Interests
-
-[[TODO: verified statement or verified not-applicable declaration.]]
+[[TO BE CONFIRMED WITH THE FINAL AUTHOR RECORD.]]
 
 ## Data and Code Availability
 
 Model weights and the inference package are available from the [Hugging Face
 model repository](https://huggingface.co/cantonese-asr-lab/whisper-small-cantonese-w500-adaptive).
+The released model weights are licensed under the Apache License 2.0.
 Training, evaluation, packaging, and verification code is available from the
 [project repository](https://github.com/Vanxun-Hank/cantonese-asr). Training
 data is not redistributed with the model. Users must obtain each source under
-its own terms. The exact training-time task-data snapshot and final model
-license remain author/Mentor confirmation items.
-
-## Ethics and Consent
-
-[[TODO: human determination of applicability and verified statement.]]
+its own terms. Information identifying the exact training-time task-data
+snapshot is available from the corresponding author by email; the contact
+address will be added when the final author record is confirmed.
 
 ## AI-Use Disclosure
 

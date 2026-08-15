@@ -1,7 +1,6 @@
 # Cantonese ASR with Whisper-small
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 粤语自动语音识别（ASR）系统，基于 `openai/whisper-small` 进行 source-alternating adaptation。WenetSpeech-Yue 的 source-pure optimizer step 只更新 Encoder，交替出现的 task-provided step 更新完整模型。
 
@@ -383,7 +382,10 @@ sbatch slurm/train_w500_extension.slurm
 
 ## License
 
-`scripts/package_submission.py` 会创建平铺 ZIP，并校验其中恰好包含一个 `model.safetensors`。`scripts/verify_submission.py` 可在断网模式下检查模型加载、预测输出数量、顺序和 `audio_path` 一致性。
+The released model weights are available under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). This model
+license does not replace the separate terms attached to upstream datasets,
+third-party models, or individual software dependencies.
 
 ---
 
@@ -435,7 +437,10 @@ the [Cantonese Life Scenarios
 Corpus](https://huggingface.co/datasets/leeduckgo/cantonese-life-scenarios-corpus).
 The current dataset page documents provenance; it is not presented as the
 exact training-time revision. Training data is not redistributed with the
-model, and users must follow each source's terms.
+model, and users must follow each source's terms. Information identifying the
+exact training-time task-data snapshot is available from the corresponding
+author by email; the contact address will be added with the final author
+record.
 
 ### Public artifacts
 
@@ -452,7 +457,6 @@ raw checkpoint, extracted release package, and bundled inference path.
 ### Scope
 
 The report evaluates one task-defined character protocol and one OOD surface.
-P2 covers fixed-budget early adaptation rather than convergence. Author and
-Mentor review is still required for the final author list, affiliations,
-funding, competing interests, ethics, AI-use disclosure, model license, and
-training-time data revisions.
+P2 covers fixed-budget early adaptation rather than convergence. The final
+author record, corresponding-author email, and AI-use disclosure remain to be
+confirmed.
