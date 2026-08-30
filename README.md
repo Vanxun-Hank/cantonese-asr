@@ -1,7 +1,17 @@
+<div align="center">
+
 # Cantonese ASR with Whisper-small
+
+**A fully supervised-fine-tuned `whisper-small` for Cantonese, with an honest, reproducible experiment trail.**
+No architecture or tokenizer changes — every gain comes from data curation and training curriculum, and every claim is checked against a held-out set before it's called a result.
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Model on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-whisper--small--cantonese--w500--adaptive-yellow.svg)](https://huggingface.co/Vanxun-Hank/whisper-small-cantonese-w500-adaptive)
+
+</div>
+
+---
 
 粤语自动语音识别（ASR）系统，基于 `openai/whisper-small` 微调。保持 Whisper-small 模型架构与 tokenizer 不变，通过监督微调（Full SFT）适配粤语音频—文本数据。
 
