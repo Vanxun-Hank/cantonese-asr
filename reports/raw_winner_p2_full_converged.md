@@ -46,8 +46,9 @@ Full minus LoRA at the same size: Small `-0.112`, Medium `-0.069`, Large `-0.020
 therefore not merely slower to converge at this budget. SMALL_LORA is also the only unstable
 arm (severe 42/39 against 11-19 everywhere else).
 
-**This holds on validation only** — on Public the Large-v2 ranking reverses and on OOD it
-vanishes. See the surfaces section below before drawing a conclusion about LoRA.
+**This holds on validation only** — on Public the Large-v2 ranking reverses, and on OOD the
+margin shrinks to 0.012. See the surfaces section below before drawing a conclusion about
+LoRA.
 
 ## Public and OOD surfaces, step 4371
 
@@ -61,12 +62,17 @@ Receipts under [`reports/p2_full_converged/receipts/surfaces/`](p2_full_converge
 | MEDIUM_FULL | 0.940526 / 0.926316 | 0.062642 / 0.073942 | 0.353500 / 0.347000 | 0.330595 / 0.330263 |
 | SMALL_FULL | 0.872105 / 0.875263 | 0.091293 / 0.095342 | 0.321500 / 0.323500 | 0.346902 / 0.345948 |
 
+**The OOD column above is not measuring recognition** — see below. Read it as an
+orthography score.
+
 ### LoRA's validation deficit does not transfer to the other surfaces
 
 On validation, LARGE_V2_LORA trails LARGE_V2_FULL by 0.020 tol2 (`0.877493/0.871795` against
 `0.894587/0.894587`). **On Public the ranking reverses**: LoRA leads by +0.005 to +0.010 tol2
-with 11% lower CER, in both seeds. On OOD the two are indistinguishable — 0.3555-0.3605 against
-0.3585-0.3590, with CER equal to three decimals.
+with 11% lower CER, in both seeds. On OOD as scored the two are indistinguishable
+(0.3555-0.3605 against 0.3585-0.3590); once the orthography artefact below is removed, Full
+leads by 0.012 (0.921-0.925 against 0.908-0.914) — still smaller than its 0.020 validation
+margin.
 
 Both arms were decoded from the same step, the same decoder and the same manifest hash, so this
 is a surface effect and not a checkpoint mix-up. The natural reading is that full SFT is buying
@@ -76,13 +82,52 @@ validation, and the section above should be read with that restriction.
 
 This also matters for cost: LoRA trains 0.254% of the parameters at 6.58 GB peak.
 
-### OOD remains the unsolved surface
+### The OOD panel is scoring orthography, not recognition
 
-Every arm sits at tol2 0.32-0.36 with CER 0.32-0.35, against 0.87-0.96 / 0.05-0.10 on Public,
-and 457-529 of 2000 utterances are flagged severe. Capacity barely moves it: Small Full to
-Large-v2 Full is +0.037 tol2 on OOD against +0.075 on Public. Replacement characters and
-repeated runaways are essentially absent on both surfaces (at most 1), so this is accuracy on
-genuinely out-of-domain audio, not decoding instability.
+Raw OOD numbers look catastrophic next to Public — tol2 0.32-0.36 against 0.87-0.96 — and the
+obvious reading is a domain gap. It is not. `cantonese_asr/metrics.py` follows the official
+evaluator exactly: `normalize_prediction` converts predictions to simplified, and
+`normalize_reference` deliberately does not convert references (*"references are not converted
+to simplified Chinese"*). That asymmetry is correct when references are already simplified,
+which is true of the official and validation surfaces. **The OOD panel's references come from
+Common Voice zh-HK and are traditional**, and `prepare_ood_manifest.py` applies no orthography
+handling, so every traditional character in a reference is scored as a substitution against a
+forcibly-simplified hypothesis.
+
+The top OOD confusions are exactly that and nothing else: 係→系 (336), 個→个 (244), 學→学
+(132), 會→会 (94), 時→时 (91), 話→话 (87), 為→为 (85), 灣→湾 (84), 過→过 (74), 國→国 (73).
+
+Converting **both** sides to simplified before scoring:
+
+| arm | OOD tol2 as scored | OOD tol2 normalised | OOD CER as scored | OOD CER normalised |
+|---|---|---|---|---|
+| LARGE_V2_FULL | 0.358500 / 0.359000 | **0.925000 / 0.921000** | 0.324744 / 0.326238 | **0.063115 / 0.064982** |
+| LARGE_V2_LORA | 0.360500 / 0.355500 | 0.914000 / 0.908000 | 0.325491 / 0.327482 | 0.063779 / 0.066559 |
+| MEDIUM_FULL | 0.353500 / 0.347000 | 0.909000 / 0.911500 | 0.330595 / 0.330263 | 0.071248 / 0.071289 |
+| SMALL_FULL | 0.321500 / 0.323500 | 0.865000 / 0.861000 | 0.346902 / 0.345948 | 0.094693 / 0.094651 |
+
+**72.7% to 80.6% of the recorded OOD edit distance is script conversion.** Public moves by
+0.2-0.5% under the same treatment, which confirms the effect is specific to this panel and not
+an artefact of the normaliser.
+
+Three of the first five OOD utterances are perfect recognitions scored as errors:
+
+```
+ref 我住喺堅尼地城站附近        hyp 我住喺坚尼地城站附近        ed 1 -> 0
+ref 大嫂要去九龍城沐泰街嗰度買啲嘢  hyp 大嫂要去九龙城沐泰街𠮶度买啲嘢  ed 3 -> 0
+ref 依法享有就業教育醫療旅遊金融等多項服務和便利                      ed 6 -> 0
+```
+
+So the honest statement is the opposite of the one the raw table suggests: **normalised OOD CER
+(0.063) is within 0.006 of Public CER (0.057) for Large-v2 Full.** The models generalise to this
+panel about as well as they do to the public set. The 457-529 severe flags per 2000 utterances
+are the same artefact.
+
+This is a surface-construction defect, not a metric bug, and it predates this round — the
+structural probe's OOD column carries it too, so any "OOD is hard" reading drawn from earlier
+rounds needs rechecking. The fix belongs in `prepare_ood_manifest.py` (normalise references at
+build time) or in an explicitly symmetric OOD scorer; it is deliberately not patched here,
+because changing a frozen manifest mid-round would break its recorded SHA.
 
 ## Pre-registered extension gates: 2 of 8 pass
 
