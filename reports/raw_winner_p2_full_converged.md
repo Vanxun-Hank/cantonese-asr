@@ -129,6 +129,58 @@ rounds needs rechecking. The fix belongs in `prepare_ood_manifest.py` (normalise
 build time) or in an explicitly symmetric OOD scorer; it is deliberately not patched here,
 because changing a frozen manifest mid-round would break its recorded SHA.
 
+## Public is not ranking the arms the way validation does
+
+Every completed variant, Public surface, step 4371, sorted by tol2. RAW_WINNER scores
+`0.894211 / 0.081328` on this surface.
+
+| variant | arm | tol2 | CER | severe |
+|---|---|---|---:|---:|
+| baseline | **LARGE_V2_LORA_S43** | **0.955263** | **0.050985** | 3 |
+| baseline | LARGE_V2_LORA_S42 | 0.951579 | 0.050719 | 2 |
+| SC | LARGE_V2_FULL_S43 | 0.950526 | 0.052454 | 2 |
+| SC | LARGE_V2_FULL_S42 | 0.950000 | 0.051964 | 4 |
+| baseline | LARGE_V2_FULL_S42 | 0.946842 | 0.057436 | 2 |
+| baseline | LARGE_V2_FULL_S43 | 0.945263 | 0.055790 | 3 |
+| baseline | MEDIUM_FULL_S42 | 0.940526 | 0.062642 | 3 |
+| baseline | MEDIUM_LORA_S42 | 0.938421 | 0.063398 | 4 |
+| baseline | MEDIUM_LORA_S43 | 0.935263 | 0.065222 | 6 |
+| baseline | MEDIUM_FULL_S43 | 0.926316 | 0.073942 | 5 |
+| batch-4 control | SMALL_FULL_S42 | 0.878421 | 0.090804 | 7 |
+| baseline | SMALL_FULL_S43 | 0.875263 | 0.095342 | 8 |
+| SC | SMALL_FULL_S43 | 0.874211 | 0.093740 | 5 |
+| SC | SMALL_FULL_S42 | 0.873158 | 0.093295 | 8 |
+| baseline | SMALL_FULL_S42 | 0.872105 | 0.091293 | 8 |
+| batch-4 control | SMALL_FULL_S43 | 0.845263 | 0.157049 | 32 |
+| baseline | SMALL_LORA_S42 | 0.789474 | 0.126040 | 19 |
+| baseline | SMALL_LORA_S43 | 0.782632 | 0.129021 | 21 |
+
+### The two surfaces rank the six baseline arms differently, and the disagreement has a direction
+
+| arm | validation mean | rank | Public mean | rank | move |
+|---|---:|---:|---:|---:|---:|
+| LARGE_V2_FULL | 0.894587 | 1 | 0.946052 | 2 | -1 |
+| MEDIUM_FULL | 0.889601 | 2 | 0.933421 | 4 | -2 |
+| LARGE_V2_LORA | 0.874644 | 3 | 0.953421 | 1 | **+2** |
+| SMALL_FULL | 0.827635 | 4 | 0.873684 | 5 | -1 |
+| MEDIUM_LORA | 0.820512 | 5 | 0.936842 | 3 | **+2** |
+| SMALL_LORA | 0.715100 | 6 | 0.786053 | 6 | 0 |
+
+Spearman between the two rankings is **0.60**. More telling than the magnitude is the sign:
+**both arms that move up are LoRA arms, every arm that moves down is full SFT, and the SC
+variant moves the same way.** LoRA at Medium also overtakes full SFT at Medium on Public
+(`0.936842` against `0.933421`) — so the Large-v2 reversal reported above is not a single
+capacity point.
+
+The round's protocol ranks candidates on fixed validation and uses Public and OOD only as a
+stability veto. That is the right design for avoiding leaderboard overfitting, and this report
+does not propose changing a registered rule mid-round. It does record the consequence: **on
+this round's evidence, validation systematically underrates the less aggressively fitted
+regimes — LoRA, and the source-conditional curriculum — relative to the surface built from
+competition data.** Anyone selecting a checkpoint to submit, rather than to compare, should
+know that the registered rule would hand them LARGE_V2_FULL while Public prefers
+LARGE_V2_LORA_S43 by 0.0087 tol2 and 11% CER.
+
 ## Pre-registered extension gates: 2 of 8 pass
 
 Run with the round's own `extension_decision` ([`scripts/analysis/gates.py`](../scripts/analysis/gates.py)):
@@ -150,7 +202,7 @@ strongest arm is barred from 5 epochs, while the arm with the largest CER improv
 does qualify (MEDIUM_LORA) is one of the weakest in absolute terms. The gate is selecting
 against the tail behaviour of strong arms, not against poor accuracy.
 
-## Source-conditional curriculum: harmful, and it is not the batch confound
+## Source-conditional curriculum: harmful on validation, helpful on Public
 
 SC streams have two 4-row tail batches per epoch (official `6292 = 393*16 + 4`, external
 `17012 = 1063*16 + 4`) while the baseline has one 8-row tail. `rank_microbatches` requires
@@ -169,7 +221,19 @@ the round's own `select_validation` to pick the representative checkpoint
 | batch-4 minus batch-8 baseline, tol2 | +0.001425 | -0.007123 |
 
 The batch effect is small and changes sign across seeds; the SC effect is consistent in both
-seeds and on both metrics. **The source-conditional curriculum degrades SMALL_FULL.**
+seeds and on both metrics. **On validation, the source-conditional curriculum degrades
+SMALL_FULL.**
+
+**On Public it does the opposite at Large-v2.** SC LARGE_V2_FULL scores `0.950000 / 0.950526`
+against the baseline's `0.946842 / 0.945263` — ahead in both seeds — with CER `0.051964 /
+0.052454` against `0.057436 / 0.055790`, 6-10% lower. Its own validation numbers were *behind*
+the baseline by 0.0057 / 0.0014. At Small the Public comparison is inconclusive (`-0.0053 /
++0.0289`, and the batch-4 control's seed 43 is the runaway checkpoint described below). On OOD
+as scored, SC is behind everywhere by 0.004-0.016.
+
+So the earlier one-line reading — "SC is harmful" — holds only on validation and does not
+survive the surface it was meant to generalise to. See the section below: this is the third
+independent case in this round of validation ranking against Public.
 
 Changing batch also changes `config_sha256` and trips the `preparation/config mismatch` check.
 None of the preparation outputs (streams, audio receipts, model hashes, LM splits) depend on
@@ -248,10 +312,51 @@ basename index rather than a single-level lookup.
 seconds per step (3.7x) at 29.3 GB of 80 GB peak, taking 4371 steps from 12.1 to 3.3 hours.
 `batch * accum` is fixed, so this only trades serial micro-batches for parallel ones.
 
+## What this round closed, and what is left
+
+Recorded plainly because the negative results are the bulk of the output.
+
+**Closed — measured, not inferred:**
+
+| line | result |
+|---|---|
+| The `external73` data recipe | At matched size it *loses* to RAW_WINNER: −0.026 validation, −0.020 Public |
+| More capacity | Medium → Large-v2 is +0.005 tol2 for double the parameters |
+| Source-conditional curriculum | No net win; helps Public at Large-v2, hurts validation and OOD |
+| Training longer | 5 epochs buys +0.01 tol2 with CER unchanged — cosmetic |
+| Cleaning the references | 2 of 702 utterances look misaligned; the data is already clean |
+| Fixing the worst utterances | The error is a flat tail; the worst 50 hold 37.9% |
+| Character 5-gram rescoring | Prior round selected λ = 0.0 — no gain |
+| Static fusion (MBR/ROVER) | Prior round: validation MBR trails the best single component |
+| N-best reranking | Prior round: 5-best oracle ceiling is +0.0028 tol2 |
+
+**Open, and not yet spent:**
+
+- **The library version.** Under `transformers==5.6.2`, SMALL_FULL scores `0.843305 / 0.849003`
+  against `0.826211 / 0.829060` on 4.57.6 — **+0.017 / +0.020 tol2, CER 6% lower, severe down
+  from 17/17 to 11/15**, with no algorithm or parameter change. This round pinned 4.57.6 so the
+  pre-registered comparison stayed valid against the original execution log; that pin protects
+  the *comparison*, not any model one might ship. It has never been combined with Large-v2.
+- **Per-utterance routing.** The prior round's three-model oracle is 7.5% better in CER than the
+  best single system while static fusion captured none of it. The complementarity is real and
+  unexploited; the obstacle is the selector, and the character LM already failed in that role.
+- **A Cantonese tokenizer.** Untouched. 29-35% of reference characters tokenize to multiple
+  tokens, and 70.8% of the residual error is substitution, so this is at least aimed at the
+  right side of the model.
+- **Augmentation.** SpecAugment is explicitly disabled and no augmentation axis was ever tested.
+- **Domain vocabulary coverage.** The substitutions are real Cantonese lexical confusions
+  (`容积率→溶秩率`, `熨烫平整→运动屏净`). More audio covering those words would help; that is a
+  data-acquisition cost, not a method.
+
+The honest summary: **this round did not find a better method, it found a better model, and the
+difference cost 6x the parameters.** Nine method-level lines are now closed. The gains that
+remain unclaimed are a library upgrade and a model-size change, neither of which is a research
+contribution.
+
 ## Not in this report
 
-- Public and OOD for MEDIUM_LORA and SMALL_LORA — not evaluated on those surfaces.
-- SC LARGE_V2_FULL — training, both seeds.
+- SC LARGE_V2_FULL on Public and OOD at Medium and Small capacities — only Large-v2 and Small
+  were run.
 - Text/LM/fusion stages and the complete finalizer. `finalize_p2_full.py` is a partial
   collector by design.
 - The original 4090 round's `artifacts/raw_winner_p2_full_v1/` receipts (~62.66 GPU-hours),
