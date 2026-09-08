@@ -32,6 +32,11 @@ A Cantonese Automatic Speech Recognition system fine-tuned from `openai/whisper-
 - [Config System](#config-system)
 - [Scripts Reference](#scripts-reference)
 - [Slurm Jobs](#slurm-jobs)
+- [License](#license)
+- [Current best public method](#current-best-public-method)
+- [Update 2026-09-08: the P2 capacity matrix is converged](#update-2026-09-08-the-p2-capacity-matrix-is-converged)
+- [Current score, and how competitive it actually is](#current-score-and-how-competitive-it-actually-is)
+- [Roadmap: from 69.49 toward stronger leaderboard performance](#roadmap-from-6949-toward-stronger-leaderboard-performance)
 
 ---
 
@@ -75,7 +80,7 @@ cantonese-asr/
 - **Full SFT training** — AdamW with a learning-rate schedule, runnable on a Slurm cluster.
 - **Comprehensive metrics** — logs loss, sentence accuracy, CER, learning rate, GPU memory and throughput.
 - **Rich reporting** — generates PNG, CSV, JSON and HTML experiment reports automatically.
-- **Checkpoint selection** — ranks checkpoints on a fixed validation set, with a separate OOD set used to diagnose generalisation.
+- **Checkpoint selection** — ranks checkpoints on a fixed validation set, with a separate OOD set used to diagnose generalisation. <sub>Caveat (2026-09-08): the OOD panel's references are traditional Chinese while the scorer simplifies hypotheses, so its raw numbers measure orthography more than recognition — see the converged report.</sub>
 - **Offline packaging** — builds a flat submission archive containing exactly one `model.safetensors`.
 - **Advanced decoding** — beam search, n-best rescoring and character-level LM integration.
 - **Distillation** — supports training against a teacher model such as SenseVoice or FunASR.
@@ -391,7 +396,10 @@ sbatch slurm/train_w500_extension.slurm
 
 ## License
 
-`scripts/package_submission.py` builds a flat ZIP and asserts it contains exactly one `model.safetensors`. `scripts/verify_submission.py` checks, with networking disabled, that the model loads and that prediction count, ordering and `audio_path` values all line up.
+MIT — see [`LICENSE`](LICENSE).
+
+~~`scripts/package_submission.py` builds a flat ZIP and asserts it contains exactly one `model.safetensors`. `scripts/verify_submission.py` checks, with networking disabled, that the model loads and that prediction count, ordering and `audio_path` values all line up.~~
+<sub>Struck: this paragraph is duplicated verbatim from [Offline Submission](#offline-submission) and was never license text.</sub>
 
 ## Current best public method
 
@@ -406,6 +414,26 @@ The exact model scoring 69.49 on the platform is released on
 Training logic, selection guardrails, inference configuration and the scope of what is
 reproducible are documented in
 [`docs/W500_ADAPTIVE_METHOD.md`](docs/W500_ADAPTIVE_METHOD.md).
+
+## Update 2026-09-08: the P2 capacity matrix is converged
+
+Several caveats struck through below are settled by
+[`reports/raw_winner_p2_full_converged.md`](reports/raw_winner_p2_full_converged.md).
+All 12 baseline arms now run to 3 epochs on two seeds, with Public and OOD for the top four.
+
+- **Capacity has been measured, not just hypothesised.** Large-v2 Full reaches validation
+  tol2 `0.8946` / CER `0.0685` against RAW_WINNER's `0.8547` / `0.0859`. But Small→Medium is
+  +0.063 tol2 while Medium→Large-v2 is only **+0.005** for double the parameters.
+- **LoRA is not the weaker option it looks like on validation.** It trails Full by 0.020 tol2
+  there, but *leads* on Public (`0.9516` vs `0.9468`, 11% lower CER, both seeds) while training
+  0.254% of the parameters.
+- **The OOD panel was never measuring recognition.** Its references are traditional while the
+  scorer forcibly simplifies hypotheses, so 73-81% of recorded OOD error is script conversion.
+  Normalised, Large-v2 Full's OOD CER is `0.063` — within 0.006 of its Public CER.
+- **Capacity is not where the remaining error is.** 89.7% of Large-v2 Full's residual edits are
+  also wrong in Small Full, 70.8% are substitutions, and only 3.1% look like misaligned data.
+
+None of this changed the released 69.49 model, which is still the W500 adaptive checkpoint.
 
 ## Current score, and how competitive it actually is
 
@@ -432,9 +460,11 @@ this score is not yet a stable, strong leaderboard result.
 
 2. **Model capacity and tokenizer were not upgraded.** The released model is still
    Whisper-small at about 241.7M parameters, with architecture and tokenizer unchanged.
-   The work went into data and optimisation strategy rather than a larger model, a
+   ~~The work went into data and optimisation strategy rather than a larger model, a
    Cantonese-specific tokenizer, or stronger language modelling — which imposes a visible
-   ceiling.
+   ceiling.~~ Capacity has since been measured: Medium and Large-v2 both clear RAW_WINNER,
+   but the Medium→Large-v2 step is only +0.005 tol2, so the ceiling is not mainly a capacity
+   ceiling. Tokenizer and language modelling remain untested.
 
 3. **External data is distributionally different from the competition corpus.**
    WenetSpeech-Yue audio is generally longer and may carry pseudo-labels or different
@@ -471,11 +501,11 @@ The current work is best understood as an **auditable, reproducible competition 
 rather than a finished, leaderboard-optimised system. To become competitive, the next round
 should record, separately:
 
-- per-sentence error types: insertions, repetitions, substitutions, truncations and EOS failures;
+- ~~per-sentence error types: insertions, repetitions, substitutions, truncations and EOS failures;~~ done — substitutions dominate at 70.8%, and the tail is flat;
 - the gain from each decoding configuration, reported apart from the `num_beams=1` baseline;
-- the independent effect of decoder-focused fine-tuning, model capacity, and a Cantonese tokenizer;
+- the independent effect of decoder-focused fine-tuning, ~~model capacity,~~ and a Cantonese tokenizer;
 - how the competition corpus differs from Wenet/Official data in duration, speaker, scene and character usage;
-- the correlation between validation, public, OOD and the final hidden leaderboard.
+- ~~the correlation between validation, public, OOD and the final hidden leaderboard.~~ partly answered — validation and Public disagree on Full vs LoRA, and OOD needs rebuilding before it can be correlated with anything.
 
 Any new approach must keep passing fixed-validation ranking, the Public/OOD guardrails,
 offline inference parity and SHA-256 artifact verification. Without those, a higher one-off
@@ -484,9 +514,9 @@ score does not demonstrate a better model.
 
 ## Roadmap: from 69.49 toward stronger leaderboard performance
 
-The next round should not treat "train longer" as the default answer. It should separate
+~~The next round should not treat "train longer" as the default answer. It should separate
 the main variables and verify them in order of cost and risk. What follows is a
-reproducible, revertible path, in which "passing" means an improvement on the fixed
+reproducible, revertible path, in which~~ "passing" means an improvement on the fixed
 validation set that also trips none of the Public/OOD or offline-parity guardrails.
 
 The full technical configuration of the RAW_WINNER 69.49 training chain and the executed
@@ -500,9 +530,11 @@ failure recovery and SHA-256 sums — is consolidated in:
 That is the recommended single entry point. An auto-generated short form of P2 is in
 [`reports/raw_winner_p2_structural_probe.md`](reports/raw_winner_p2_structural_probe.md),
 and the paper-style write-up with its limitations is in
-[`paper/manuscript.md`](paper/manuscript.md). The P2 results support only a 2,400-sample,
+[`paper/manuscript.md`](paper/manuscript.md). ~~The P2 results support only a 2,400-sample,
 150-step matched-budget conclusion about adaptation efficiency; they are not an architecture
-ranking at convergence, and none of them fed the 69.49 platform submission.
+ranking at convergence~~ — superseded on 2026-09-08 by the converged matrix in
+[`reports/raw_winner_p2_full_converged.md`](reports/raw_winner_p2_full_converged.md), which
+also reverses the probe's ranking. None of it fed the 69.49 platform submission.
 
 ### P0: establish a comparable error baseline first
 
@@ -535,9 +567,11 @@ ranking at convergence, and none of them fed the 69.49 platform submission.
 
 ### P2: costlier structural changes
 
-1. **Model capacity.** Once the baseline and the data-alignment conclusions are stable,
+1. ~~**Model capacity.** Once the baseline and the data-alignment conclusions are stable,
    compare Whisper-medium/large, parameter-efficient fine-tuning and full SFT on gain,
-   memory, throughput and latency.
+   memory, throughput and latency.~~ **Done (2026-09-08).** Small/Medium/Large-v2 x
+   full-SFT/LoRA, two seeds, 3 epochs. Returns collapse above Medium; LoRA costs 6.58 GB
+   against Full's higher peak but is *not* faster in wall time (4:07 vs 3:53 at Large-v2).
 2. **Cantonese text modelling.** Evaluate a Cantonese-specific tokenizer, vocabulary
    extension, or external LM rescoring — checking Unicode, traditional/simplified and
    variant-character normalisation, and offline submission compatibility alongside.
@@ -553,7 +587,7 @@ ranking at convergence, and none of them fed the 69.49 platform submission.
 | B | Target-domain sampling / short-utterance strategy | Model, decoding, total update budget | Per-duration and per-source slices, overall CER | Stable gain on both target slices and overall |
 | C | Decoder-focused SFT | Encoder update rule, data version | Character choice, insertions, repetitions, EOS | Text-side errors drop with no clear acoustic regression |
 | D | A single augmentation axis | Data sampling, model, decoding | Noise/channel/speed slices | OOD improves without losing validation |
-| E | Larger model or tokenizer | Data and evaluation protocol | Score, parameters, memory, latency | Gain justifies the added cost |
+| E | Larger model or tokenizer | Data and evaluation protocol | Score, parameters, memory, latency | ~~Gain justifies the added cost~~ **Model half done 2026-09-08: it does not, above Medium. Tokenizer untested.** |
 
 ### Selection and release rules
 

@@ -23,17 +23,22 @@ A Cantonese Automatic Speech Recognition system fine-tuned from `openai/whisper-
 
 ## 目录
 
-- [Project Structure](#project-structure)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Quick Start](#quick-start)
-- [Data Format](#data-format)
-- [Training](#training)
-- [Evaluation & Reports](#evaluation--reports)
-- [Offline Submission](#offline-submission)
-- [Config System](#config-system)
-- [Scripts Reference](#scripts-reference)
-- [Slurm Jobs](#slurm-jobs)
+- [项目结构](#项目结构)
+- [特性](#特性)
+- [环境依赖](#环境依赖)
+- [快速开始](#快速开始)
+- [数据格式](#数据格式)
+- [训练](#训练)
+- [评测与报告](#评测与报告)
+- [离线提交](#离线提交)
+- [配置系统](#配置系统)
+- [脚本索引](#脚本索引)
+- [Slurm 作业](#slurm-作业)
+- [许可](#许可)
+- [当前公开最佳方法](#当前公开最佳方法)
+- [更新 2026-09-08：P2 容量矩阵已收敛](#更新-2026-09-08p2-容量矩阵已收敛)
+- [当前分数与榜单竞争力](#当前分数与榜单竞争力)
+- [改进路线图：从 69.49 到更强榜单表现](#改进路线图从-6949-到更强榜单表现)
 
 ---
 
@@ -77,7 +82,7 @@ cantonese-asr/
 - **Full SFT Training** — AdamW 优化器 + 学习率调度，支持 Slurm 集群训练。
 - **Comprehensive Metrics** — 记录 loss、整句准确率 (sentence accuracy)、CER、学习率、显存和吞吐。
 - **Rich Reporting** — 自动生成 PNG、CSV、JSON 和 HTML 实验报告。
-- **Checkpoint Selection** — 根据固定验证集选择最优 checkpoint，并用独立 OOD 数据诊断泛化能力。
+- **Checkpoint Selection** — 根据固定验证集选择最优 checkpoint，并用独立 OOD 数据诊断泛化能力。<sub>注意（2026-09-08）：OOD 面的参考是繁体，而打分器会把预测强制转简，所以它的原始数字更多在测字形而不是识别 —— 见收敛报告。</sub>
 - **Offline Packaging** — 生成根目录平铺、只包含 `model.safetensors` 的离线提交包。
 - **Advanced Decoding** — 支持 beam search、n-best rescoring、character-level LM 集成。
 - **Distillation** — 支持 teacher model（如 SenseVoice、FunASR）蒸馏训练。
@@ -392,7 +397,10 @@ sbatch slurm/train_w500_extension.slurm
 
 ## 许可
 
-`scripts/package_submission.py` 会创建平铺 ZIP，并校验其中恰好包含一个 `model.safetensors`。`scripts/verify_submission.py` 可在断网模式下检查模型加载、预测输出数量、顺序和 `audio_path` 一致性。
+MIT，见 [`LICENSE`](LICENSE)。
+
+~~`scripts/package_submission.py` 会创建平铺 ZIP，并校验其中恰好包含一个 `model.safetensors`。`scripts/verify_submission.py` 可在断网模式下检查模型加载、预测输出数量、顺序和 `audio_path` 一致性。~~
+<sub>划掉：这段与[离线提交](#离线提交)一字不差重复，本来就不是许可证内容。</sub>
 
 ## 当前公开最佳方法
 
@@ -405,6 +413,26 @@ optimizer step 交错进行，因此外部数据主要扩展粤语声学覆盖�
 [Hugging Face](https://huggingface.co/Vanxun-Hank/whisper-small-cantonese-w500-adaptive)。
 训练逻辑、选择护栏、推理配置和复现范围见
 [`docs/W500_ADAPTIVE_METHOD.md`](docs/W500_ADAPTIVE_METHOD.md)。
+
+## 更新 2026-09-08：P2 容量矩阵已收敛
+
+下文若干划掉的说法已被
+[`reports/raw_winner_p2_full_converged.md`](reports/raw_winner_p2_full_converged.md) 解决。
+12 个基线 arm 全部跑满 3 epoch、两个 seed，前四个 arm 另有 Public 与 OOD。
+
+- **容量已经量出来了，不再是假设。** Large-v2 Full 的 validation tol2 `0.8946` / CER `0.0685`，
+  对比 RAW_WINNER 的 `0.8547` / `0.0859`。但 Small→Medium 是 +0.063 tol2，
+  Medium→Large-v2 参数量翻倍只换来 **+0.005**。
+- **LoRA 不是 validation 上看起来的那个弱选项。** 它在 validation 落后 Full 0.020 tol2，
+  但在 Public **反超**（`0.9516` vs `0.9468`，CER 低 11%，两个 seed 一致），
+  而只训练 0.254% 的参数。
+- **OOD 面从来就没在测识别。** 它的参考是繁体，而打分器强制把预测转简，
+  所以记录在案的 OOD 错误有 73~81% 是字形转换。归一化后 Large-v2 Full 的
+  OOD CER 是 `0.063`，和它的 Public CER 只差 0.006。
+- **剩下的错误不在容量上。** Large-v2 Full 残余编辑量的 89.7% 在 Small Full 上同样错，
+  70.8% 是替换，只有 3.1% 像是数据错配。
+
+以上都没有改变已发布的 69.49 模型，它仍然是 W500 adaptive 那个 checkpoint。
 
 ## 当前分数与榜单竞争力
 
@@ -423,7 +451,7 @@ optimizer step 交错进行，因此外部数据主要扩展粤语声学覆盖�
 
 1. **绝对错误率仍然偏高。** CER 为 24.73%，而容错 2 字的整句准确率只有 34%。换句话说，隐藏集约 66% 的句子没有达到“最多错 2 个字符”的标准。这个误差水平本身就会限制榜单位置，即使训练流程很严谨。
 
-2. **模型容量和 tokenizer 没有升级。** 发布模型仍是约 241.7M 参数的 Whisper-small，架构和 tokenizer 保持不变。训练重点放在数据和优化策略，而不是更大模型、粤语专用 tokenizer 或更强的语言建模能力；这会形成可见的上限。
+2. **模型容量和 tokenizer 没有升级。** 发布模型仍是约 241.7M 参数的 Whisper-small，架构和 tokenizer 保持不变。~~训练重点放在数据和优化策略，而不是更大模型、粤语专用 tokenizer 或更强的语言建模能力；这会形成可见的上限。~~ 容量此后已经测过：Medium 和 Large-v2 都越过了 RAW_WINNER，但 Medium→Large-v2 只有 +0.005 tol2，所以这个上限主要不是容量上限。tokenizer 与语言建模仍未验证。
 
 3. **外部数据与竞赛语料存在分布差异。** WenetSpeech-Yue 音频通常更长，且可能包含伪标签或不同的转写习惯；竞赛语音则更接近短句和特定标注风格。W500 curriculum 已经在缓解这个问题，但它不能消除说话人、噪声、时长、词汇和用字分布的差异。
 
@@ -439,18 +467,18 @@ optimizer step 交错进行，因此外部数据主要扩展粤语声学覆盖�
 
 当前工作更像是一个**可审计、可复现的竞赛提交基线**，而不是已经完成榜单优化的最终系统。要提高榜单竞争力，下一轮实验应分别记录：
 
-- 逐句错误类型：插入、重复、替换、截断和 EOS 失败；
+- ~~逐句错误类型：插入、重复、替换、截断和 EOS 失败；~~ 已做 —— 替换占 70.8%，且误差是平坦长尾；
 - 不同解码配置的增益，且与当前 num_beams=1 基线分开报告；
-- Decoder-focused fine-tuning、模型容量和粤语 tokenizer 的独立影响；
+- Decoder-focused fine-tuning、~~模型容量和~~粤语 tokenizer 的独立影响；
 - 竞赛语料与 Wenet/Official 数据在时长、说话人、场景和用字上的分布差异；
-- validation、public、OOD 与最终隐藏榜单之间的相关性。
+- ~~validation、public、OOD 与最终隐藏榜单之间的相关性。~~ 部分有答案 —— validation 与 Public 在 Full/LoRA 上给出相反排序；OOD 要先重建才谈得上相关性。
 
 任何新方案都应继续通过固定验证排序、Public/OOD guardrails、离线推理 parity 和 SHA-256 产物校验；否则更高的单次分数无法证明它是更好的模型。
 
 
 ## 改进路线图：从 69.49 到更强榜单表现
 
-下一轮不应把“训练更久”当作默认答案，而应把主要变量拆开，按成本和风险逐级验证。下面是一条可复现、可回退的路线；其中“通过”表示在固定验证集上有收益，同时不能触发 Public/OOD 或离线推理一致性护栏。
+~~下一轮不应把“训练更久”当作默认答案，而应把主要变量拆开，按成本和风险逐级验证。下面是一条可复现、可回退的路线；其中~~“通过”表示在固定验证集上有收益，同时不能触发 Public/OOD 或离线推理一致性护栏。
 
 RAW_WINNER 69.49 获胜训练链，以及 P0–P2 已执行实验的完整技术配置、数据与权重 provenance、八卡拓扑、指标语义、解码矩阵、Official-only 回正、单轴增强、Small/Medium/Large-v2 Full SFT/LoRA、Tokenizer/Unicode、字符 LM、融合、资源成本、失败恢复和 SHA-256，统一见：
 
@@ -458,7 +486,9 @@ RAW_WINNER 69.49 获胜训练链，以及 P0–P2 已执行实验的完整技术
 
 这是推荐的唯一详细入口。P2 的自动生成简版见
 [`reports/raw_winner_p2_structural_probe.md`](reports/raw_winner_p2_structural_probe.md)，论文式实验与限制说明见
-[`paper/manuscript.md`](paper/manuscript.md)。P2 结果只支持 2,400 样本、150-step matched-budget 适配效率结论，不代表充分收敛后的架构排名，也没有混入 69.49 平台提交。
+[`paper/manuscript.md`](paper/manuscript.md)。~~P2 结果只支持 2,400 样本、150-step matched-budget 适配效率结论，不代表充分收敛后的架构排名~~ —— 2026-09-08 已被
+[`reports/raw_winner_p2_full_converged.md`](reports/raw_winner_p2_full_converged.md)
+的收敛矩阵取代，该报告同时推翻了探针的排序。这些都没有混入 69.49 平台提交。
 
 ### P0：先建立可比较的误差基线
 
@@ -475,7 +505,7 @@ RAW_WINNER 69.49 获胜训练链，以及 P0–P2 已执行实验的完整技术
 
 ### P2：中高成本的结构性改动
 
-1. **模型容量。** 在基线和数据对齐结论稳定后，再比较 Whisper-medium/large、参数高效微调与 Full SFT 的收益、显存、吞吐和延迟。
+1. ~~**模型容量。** 在基线和数据对齐结论稳定后，再比较 Whisper-medium/large、参数高效微调与 Full SFT 的收益、显存、吞吐和延迟。~~ **已完成（2026-09-08）。** Small/Medium/Large-v2 × Full-SFT/LoRA，两个 seed，3 epoch。Medium 以上收益急剧递减；LoRA 峰值显存 6.58 GB，但**并不更快**（Large-v2 上 4:07 vs Full 的 3:53）。
 2. **粤语文本建模。** 评估粤语专用 tokenizer、词表扩展或外部语言模型重排序；必须同时检查 Unicode、繁简/异体字规范化和离线提交兼容性。
 3. **多模型/多候选融合。** 只有在单模型解码和数据策略的收益被确认后，才评估 checkpoint ensemble、TTA 或候选融合，避免用复杂度掩盖单模型问题。
 
@@ -487,7 +517,7 @@ RAW_WINNER 69.49 获胜训练链，以及 P0–P2 已执行实验的完整技术
 | B | 目标域采样/短句策略 | 模型、解码和总更新预算 | 各时长/来源切片、整体 CER | 目标域切片与整体均有稳定收益 |
 | C | Decoder-focused SFT | Encoder 更新规则和数据版本 | 用字、插入、重复、EOS | 文本侧错误下降且无明显声学回退 |
 | D | 单一增强轴 | 数据采样、模型和解码 | 噪声/通道/时速切片 | OOD 改善且验证集不掉点 |
-| E | 更大模型或 tokenizer | 数据与评测协议 | 分数、参数量、显存、时延 | 增益足以覆盖新增成本 |
+| E | 更大模型或 tokenizer | 数据与评测协议 | 分数、参数量、显存、时延 | ~~增益足以覆盖新增成本~~ **模型部分 2026-09-08 已做：Medium 以上不划算。tokenizer 未测。** |
 
 ### 选择与发布规则
 
