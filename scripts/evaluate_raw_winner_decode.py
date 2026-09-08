@@ -38,6 +38,12 @@ from scripts.evaluate_predictions import read_references  # noqa: E402
 
 
 ARM_CONFIGS: dict[str, dict[str, Any]] = {
+    "P2_NATIVE5": {
+        "num_beams": 5, "no_repeat_ngram_size": 4,
+        "repetition_penalty": 1.05, "max_length": 225,
+        "early_stopping": True, "num_return_sequences": 5,
+        "selection": "native_top1",
+    },
     "D0_CURRENT": {
         "num_beams": 2, "no_repeat_ngram_size": 4,
         "repetition_penalty": 1.05, "max_length": 225,
@@ -311,6 +317,7 @@ def evaluate_surface(
     dtype: torch.dtype,
     max_samples: int | None,
     mbr_anchor_dir: Path | None,
+    diagnostic_version: int = 1,
 ) -> dict[str, Any]:
     test_rows = read_test_rows(manifest)
     references = read_references(manifest, reference_field)
@@ -328,6 +335,10 @@ def evaluate_surface(
         eos_values = [processor.tokenizer.eos_token_id]
     eos_ids = {int(value) for value in eos_values}
     special_ids = {int(value) for value in processor.tokenizer.all_special_ids}
+    expected_prompt = [int(model.config.decoder_start_token_id)] + [
+        int(token) for _, token in processor.get_decoder_prompt_ids(
+            language="zh", task="transcribe", no_timestamps=True)
+    ]
 
     predictions: list[dict[str, Any]] = []
     token_rows: list[dict[str, Any]] = []
@@ -387,7 +398,7 @@ def evaluate_surface(
             torch.cuda.synchronize(device)
         inference_started = time.perf_counter()
         with torch.inference_mode():
-            if arm == "D7_MBR_B5":
+            if arm in {"D7_MBR_B5", "P2_NATIVE5"}:
                 generated = model.generate(
                     processed.input_features.to(device=device, dtype=dtype),
                     attention_mask=attention_mask,
@@ -407,6 +418,19 @@ def evaluate_surface(
                 for item_index in range(len(batch_paths)):
                     begin = item_index * 5
                     absolute_index = start + item_index
+                    if arm == "P2_NATIVE5":
+                        native_scores = [float(x) for x in all_scores[begin:begin + 5]]
+                        if len(native_scores) != 5 or not all(math.isfinite(x) for x in native_scores):
+                            raise ValueError("Expected five finite native sequence scores")
+                        selected.append({
+                            "raw_text": all_texts[begin], "raw_ids": all_ids[begin],
+                            "selected_index": 0,
+                            "candidates": [{"rank": rank, "text": all_texts[begin + rank],
+                                            "token_ids": all_ids[begin + rank],
+                                            "sequence_score": native_scores[rank]}
+                                           for rank in range(5)],
+                        })
+                        continue
                     assert anchor_predictions is not None
                     assert anchor_tokens is not None
                     # Candidate rank 0 is the exact D3 single-output beam5 result.
@@ -481,12 +505,18 @@ def evaluate_surface(
             raw_ids = list(selection["raw_ids"])
             text = raw_text.strip()
             tokens = actual_tokens([int(value) for value in raw_ids], eos_ids)
+            prompt_present = tokens[:len(expected_prompt)] == expected_prompt
+            content_count = len(tokens) - (len(expected_prompt) if prompt_present else 0)
+            effective_total = len(tokens) if prompt_present else len(tokens) + len(expected_prompt)
+            if diagnostic_version == 1:
+                content_count = len(tokens)
+                effective_total = len(tokens) + prompt_token_count
             has_eos = bool(tokens and tokens[-1] in eos_ids)
             token_cycle = trailing_token_cycle(tokens, special_ids)
             text_cycle = long_text_cycle(text)
             replacement_count = text.count("\ufffd")
             effective_max = (
-                len(tokens) + prompt_token_count >= generation_max_length
+                effective_total >= generation_max_length
             )
             runaway_reasons: list[str] = []
             if not has_eos:
@@ -520,9 +550,11 @@ def evaluate_surface(
                     "pred_text": text,
                     "token_ids": tokens,
                     "raw_sequence_width": len(raw_ids),
-                    "generated_token_count": len(tokens),
+                    "generated_token_count": content_count,
+                    "prompt_present_in_returned_sequence": prompt_present,
+                    "eos_interpretation": "token_observed; padding may share EOS ID; not a verified stop reason",
                     "decoder_prompt_token_count": prompt_token_count,
-                    "effective_total_length": len(tokens) + prompt_token_count,
+                    "effective_total_length": effective_total,
                     "eos_token_ids": sorted(eos_ids),
                     "has_eos": has_eos,
                     "selected_candidate_index": int(selection["selected_index"]),
@@ -539,8 +571,8 @@ def evaluate_surface(
                     "normalized_prediction": normalized_prediction,
                     "edit_distance": distance,
                     **operation,
-                    "generated_token_count": len(tokens),
-                    "effective_total_length": len(tokens) + prompt_token_count,
+                    "generated_token_count": content_count,
+                    "effective_total_length": effective_total,
                     "has_eos": has_eos,
                     "effective_max_length": effective_max,
                     "replacement_character_count": replacement_count,
@@ -588,6 +620,10 @@ def evaluate_surface(
     )
     total_inference_seconds = sum(inference_seconds)
     summary = {
+        "diagnostic_version": diagnostic_version,
+        "effective_generate_kwargs": {**generation_kwargs(arm, generation_max_length),
+                                      "max_new_tokens": None,
+                                      "num_return_sequences": 5 if arm in {"P2_NATIVE5", "D7_MBR_B5"} else 1},
         "surface": surface,
         "manifest": str(manifest),
         "reference_field": reference_field,
