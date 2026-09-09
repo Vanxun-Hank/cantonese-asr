@@ -1,0 +1,28 @@
+{
+  "round": "raw_winner_p2_full_v1",
+  "recipe_version": "p2_full_four_gpu_v2",
+  "base_commit": "beb2396808dffdf2ffe275fd14a7777b9f99f550",
+  "seeds": [42, 43],
+  "external73": {"path": "artifacts/manifests/external/round2/external73.jsonl", "sha256": "2ba7edef6811b0d3e96b3347aa70f4237ec27735652d3d313bce62525f1cdea6", "rows": 23304, "source_counts": {"official": 6292, "cv": 8451, "mdcc": 8561}},
+  "surfaces": {
+    "validation": {"path": "artifacts/manifests/validation.jsonl", "rows": 702, "reference_field": "text", "sha256": "8c2310529ae8d257cb9612dc85797aff5952a5b2b6078cd146db486daf9eee4a"},
+    "public": {"path": "artifacts/datasets/official/template_pre.jsonl", "rows": 1900, "reference_field": "ref_text", "sha256": "95bb1f05b648c6a2ec2e3b23b6b725a02143da0259804af631f5afa6a4367c50"},
+    "ood": {"path": "artifacts/manifests/ood/v1/ood_panel.jsonl", "rows": 2000, "reference_field": "text", "sha256": "1ab5f1547bc7c93713e99bfb749e1359ed97e98dd8258bf448656da53abb6450"}
+  },
+  "models": {"small": "artifacts/models/whisper-small", "medium": "artifacts/models/whisper-medium", "large_v2": "artifacts/models/whisper-large-v2"},
+  "training": {"mandatory_epochs": 3, "maximum_epochs": 5, "global_batch": 16, "scheduler_horizon": 7285, "warmup_steps": 365, "review_step": 4371, "save_steps": [729,1457,2186,2914,3643,4371,5100,5828,6557,7285], "optimizer": "adamw_torch", "weight_decay": 0.01, "max_grad_norm": 1.0, "bf16": true, "tf32": true, "gradient_checkpointing": true, "apply_spec_augment": false, "mask_time_prob": 0.0, "mask_feature_prob": 0.0, "augmentation": "none", "loss_reduction": "global_valid_label_token_mean", "tail_policy": "keep_without_padding"},
+  "arms": {
+    "SMALL_FULL": {"model": "small", "world_size": 1, "batch": 8, "accum": 2, "lr": 0.00001, "method": "full"},
+    "SMALL_LORA": {"model": "small", "world_size": 1, "batch": 8, "accum": 2, "lr": 0.0001, "method": "lora"},
+    "MEDIUM_FULL": {"model": "medium", "world_size": 2, "batch": 2, "accum": 4, "lr": 0.00001, "method": "full_fsdp", "oom_fallback": {"batch": 1, "accum": 8}},
+    "MEDIUM_LORA": {"model": "medium", "world_size": 1, "batch": 4, "accum": 4, "lr": 0.0001, "method": "lora"},
+    "LARGE_V2_FULL": {"model": "large_v2", "world_size": 4, "batch": 1, "accum": 4, "lr": 0.00001, "method": "full_fsdp"},
+    "LARGE_V2_LORA": {"model": "large_v2", "world_size": 1, "batch": 1, "accum": 16, "lr": 0.0001, "method": "lora"}
+  },
+  "lora": {"r": 8, "alpha": 16, "dropout": 0.05, "target_scope": "all_attention_qv"},
+  "fsdp": {"version": 1, "strategy": "FULL_SHARD", "use_orig_params": true, "cpu_offload": false, "layer_classes": ["WhisperEncoderLayer", "WhisperDecoderLayer"]},
+  "decode": {"num_beams": 2, "do_sample": false, "no_repeat_ngram_size": 4, "repetition_penalty": 1.05, "max_length": 225, "max_new_tokens": null, "language": "zh", "task": "transcribe", "return_timestamps": false, "length_penalty": 1.0, "early_stopping": true},
+  "extension": {"early_steps": [2186,2914], "late_steps": [3643,4371], "mean_cer_improvement": 0.001, "tol2_guardrail": 0.005, "paired_seeds_required": true},
+  "lm": {"split_seed": 42, "dev_fraction": 0.05, "order": 5, "alpha": 0.1, "lambdas": [0.0,0.1,0.2,0.4,0.8], "neural": {"seeds": [42,43], "epochs": 20, "embedding": 256, "hidden": 512, "layers": 2, "dropout": 0.2, "batch": 64, "lr": 0.001, "weight_decay": 0.01, "clip": 1.0}},
+  "resource_policy": {"maximum_gpus": 4, "single_node": true, "modify_unrelated_jobs": false, "gpu_offline": true}
+}

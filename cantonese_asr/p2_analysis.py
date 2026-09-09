@@ -7,6 +7,10 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Iterable, Sequence
 
+BOS = "<BOS>"
+EOS = "<EOS>"
+UNK = "<UNK>"
+
 from cantonese_asr.metrics import levenshtein_ops, normalize_prediction
 
 
@@ -29,37 +33,40 @@ class CharacterNgramLM:
     def __post_init__(self) -> None:
         if self.order < 1 or self.alpha <= 0:
             raise ValueError("invalid n-gram configuration")
-        self.counts: dict[str, Counter[str]] = defaultdict(Counter)
-        self.context_totals: Counter[str] = Counter()
-        self.vocabulary: set[str] = {"</s>"}
+        self.counts: dict[tuple[str, ...], Counter[str]] = defaultdict(Counter)
+        self.context_totals: Counter[tuple[str, ...]] = Counter()
+        self.vocabulary: set[str] = {EOS, UNK}
 
     def fit(self, texts: Iterable[str]) -> None:
-        prefix = "<s>" * (self.order - 1)
-        for raw in texts:
-            text = normalize_prediction(raw)
+        normalized = [normalize_prediction(raw) for raw in texts]
+        for text in normalized:
             self.vocabulary.update(text)
-            sequence = prefix + text + "</s>"
+        for text in normalized:
+            sequence = [BOS] * (self.order - 1) + list(text) + [EOS]
             for index in range(self.order - 1, len(sequence)):
-                context = sequence[index - self.order + 1 : index]
+                context = tuple(sequence[index - self.order + 1 : index])
                 token = sequence[index]
                 self.counts[context][token] += 1
                 self.context_totals[context] += 1
 
     def score(self, text: str) -> float:
         text = normalize_prediction(text)
-        prefix = "<s>" * (self.order - 1)
-        sequence = prefix + text + "</s>"
+        sequence = [BOS] * (self.order - 1) + [
+            token if token in self.vocabulary else UNK for token in text
+        ] + [EOS]
         vocabulary_size = max(1, len(self.vocabulary))
         total = 0.0
         events = 0
         for index in range(self.order - 1, len(sequence)):
-            context = sequence[index - self.order + 1 : index]
+            context = tuple(sequence[index - self.order + 1 : index])
             token = sequence[index]
             numerator = self.counts[context][token] + self.alpha
             denominator = self.context_totals[context] + self.alpha * vocabulary_size
             total += math.log(numerator / denominator)
             events += 1
-        return total / max(events, 1)
+        # Include EOS likelihood, but use the same character denominator as the
+        # neural LM. This is not the ASR reference normalizer.
+        return total / max(len(text), 1)
 
 
 def rerank_candidates(
@@ -95,35 +102,53 @@ def mbr_medoid(hypotheses: Sequence[str], model_ranks: Sequence[int]) -> int:
     return min(range(len(hypotheses)), key=lambda index: (risks[index], model_ranks[index], index))
 
 
-def rover_anchor_vote(hypotheses: Sequence[str], anchor_index: int) -> str:
+def rover_anchor_vote(hypotheses: Sequence[str], anchor_index: int, *, _gap_ties: bool = False) -> str:
     """Character ROVER using pairwise anchor alignments and anchor tie policy."""
     if not 0 <= anchor_index < len(hypotheses):
         raise ValueError("invalid anchor index")
     anchor = normalize_prediction(hypotheses[anchor_index])
-    columns: list[list[str]] = [[character] for character in anchor]
-    insertions: dict[int, list[str]] = defaultdict(list)
+    system_count = len(hypotheses)
+    columns: list[list[str]] = [[""] * system_count for _ in anchor]
+    for position, character in enumerate(anchor):
+        columns[position][anchor_index] = character
+    # Each system contributes one insertion *string* per anchor gap.  Treating
+    # characters from one system as separate votes spuriously creates a majority.
+    insertion_votes: dict[int, list[str]] = {
+        position: [""] * system_count for position in range(len(anchor) + 1)
+    }
     for index, hypothesis in enumerate(hypotheses):
         if index == anchor_index:
             continue
         operations = levenshtein_ops(list(anchor), list(normalize_prediction(hypothesis)))[1]
         anchor_position = 0
+        pending: list[str] = []
         for source, target in operations:
             if source == "<ins>":
-                insertions[anchor_position].append(target)
+                pending.append(target)
                 continue
-            columns[anchor_position].append("" if target == "<del>" else target)
+            if pending:
+                insertion_votes[anchor_position][index] = "".join(pending)
+                pending.clear()
+            columns[anchor_position][index] = "" if target == "<del>" else target
             anchor_position += 1
+        if pending:
+            insertion_votes[anchor_position][index] = "".join(pending)
     result: list[str] = []
     for position in range(len(columns) + 1):
-        if insertions[position]:
-            winner, count = Counter(insertions[position]).most_common(1)[0]
-            if count > len(hypotheses) / 2:
-                result.append(winner)
+        strings = insertion_votes[position]
+        # Align insertion strings to a deterministic longest insertion skeleton.
+        # Empty strings still vote (gap); a lone repeated insertion cannot win.
+        if any(strings):
+            skeleton = min(range(system_count), key=lambda i: (-len(strings[i]), i))
+            result.append(rover_anchor_vote(strings, skeleton, _gap_ties=True))
         if position == len(columns):
             break
         votes = Counter(columns[position])
         best_count = max(votes.values())
         winners = {char for char, count in votes.items() if count == best_count}
         anchor_char = anchor[position]
-        result.append(anchor_char if anchor_char in winners else sorted(winners)[0])
+        if _gap_ties and "" in winners:
+            result.append("")
+        else:
+            result.append(anchor_char if anchor_char in winners else sorted(winners)[0])
     return "".join(result)
