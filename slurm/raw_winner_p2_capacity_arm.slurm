@@ -7,7 +7,7 @@
 #SBATCH --output=logs/canto-raw-winner-p2-cap-%A.out
 
 set -euo pipefail
-PROJECT_DIR=${PROJECT_DIR:-/home/bolin/cantonese-asr}
+PROJECT_DIR=${PROJECT_DIR:-/path/to/cantonese-asr}
 source "$PROJECT_DIR/slurm/common.sh"
 
 CONFIG=${P2_CONFIG:-configs/rounds/raw_winner_p2_structural_probe.json}

@@ -24,7 +24,7 @@ P2 文本分析、最终汇总与研究包整合仍在完善；请以 `docs/P2_F
 - 轮次 `raw_winner_p2_full_v1`，配方 `p2_full_four_gpu_v2`
 
 正在服务器执行的训练代码使用独立冻结目录：
-`/home/bolin/cantonese-asr/worktrees/raw-winner-p2-full-v1-deterministic1`
+`/path/to/cantonese-asr/worktrees/raw-winner-p2-full-v1-deterministic1`
 本包可能含冻结之后新增的分析/调度代码，**不应直接覆盖该目录**。
 打包时服务器已不可达，因此本包尚未与该冻结目录逐字节比对哈希——这一条只影响
 归档溯源，不影响本包作为源码实现的可用性。

@@ -280,7 +280,7 @@ do not delete staging or bypass checkpoint protection.
 All smoke jobs depend on1973 success; each benchmark depends on its own smoke.
 Slurm enforces the four-GPU capacity. Invalid dependencies terminate the dependent
 preflight instead of launching without evidence; there is no automatic requeue.
-Submission receipt: `/home/bolin/cantonese-asr/artifacts/raw_winner_p2_full_v1/launch/preflight_submission.json`.
+Submission receipt: `/path/to/cantonese-asr/artifacts/raw_winner_p2_full_v1/launch/preflight_submission.json`.
 Formal 3-epoch jobs have NOT been submitted. CPU tests:21 PASS on both Mac and
 server; no GPU acceptance has yet been issued. Heartbeat `p2` checks every10minutes
 and reports meaningful changes only. Full report/package integration remains pending.

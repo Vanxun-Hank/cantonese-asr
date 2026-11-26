@@ -11,7 +11,7 @@ set -euo pipefail
 : "${P2_CODE_ROOT:?isolated code root required}"
 : "${P2_ASSET_ROOT:?asset root required}"
 : "${P2_PREPARATION:?new preparation output required}"
-P2_PYTHON=${P2_PYTHON:-/home/bolin/envs/cantonese-asr-whisper/bin/python}
+P2_PYTHON=${P2_PYTHON:-/path/to/envs/cantonese-asr-whisper/bin/python}
 export CUDA_VISIBLE_DEVICES="" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 NUMBA_NUM_THREADS=4
 cd "$P2_CODE_ROOT"

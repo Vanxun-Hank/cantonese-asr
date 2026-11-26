@@ -15,7 +15,7 @@ set -euo pipefail
 : "${P2_ARM:?registered arm required}"
 : "${P2_SEED:?seed required}"
 : "${P2_PHASE:?smoke benchmark train or extend required}"
-P2_PYTHON=${P2_PYTHON:-/home/bolin/envs/cantonese-asr-whisper/bin/python}
+P2_PYTHON=${P2_PYTHON:-/path/to/envs/cantonese-asr-whisper/bin/python}
 cd "$P2_CODE_ROOT"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TOKENIZERS_PARALLELISM=false
 scontrol show job "$SLURM_JOB_ID"

@@ -23,7 +23,7 @@ Python virtual environments.
 The server-side accepted training deployment was frozen at:
 
 ```text
-/home/bolin/cantonese-asr/worktrees/raw-winner-p2-full-v1-deterministic1
+/path/to/cantonese-asr/worktrees/raw-winner-p2-full-v1-deterministic1
 ```
 
 The server became unreachable before this handoff was made. Therefore this

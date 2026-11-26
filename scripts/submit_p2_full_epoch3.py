@@ -28,7 +28,7 @@ if a.receipt.exists():
     raise FileExistsError("inspect existing submission instead of duplicating")
 subprocess.run(["squeue", "-w", "gpu001"], check=True)
 subprocess.run(["scontrol", "show", "node", "gpu001"], check=True)
-py = "/home/bolin/envs/cantonese-asr-whisper/bin/python"
+py = "/path/to/envs/cantonese-asr-whisper/bin/python"
 out = b / "outputs/raw-winner-p2-full-v1-deterministic1"
 a.receipt.parent.mkdir(parents=True, exist_ok=True)
 r = {"status": "SUBMITTING", "acceptance_sha256": sha256_file(gate_path),

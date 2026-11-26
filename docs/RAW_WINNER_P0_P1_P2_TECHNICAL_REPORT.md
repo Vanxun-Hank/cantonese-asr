@@ -212,7 +212,7 @@ P2 的容量实验从各自的原始 OpenAI checkpoint 初始化，**不是**从
 ### 2.1 Checkpoint 与哈希
 
 ```text
-/home/bolin/cantonese-asr/
+/path/to/cantonese-asr/
 outputs/w500-adaptive-continuation-v1/stage50/
 TOP2_CONSTANT_TO_50H/checkpoint-wenet-50h
 ```
@@ -763,7 +763,7 @@ independent D0 CER:       0.082086
 ### 9.1 Top 1：NOISE_S43
 
 ```text
-/home/bolin/cantonese-asr/
+/path/to/cantonese-asr/
 outputs/raw-winner-p1-v1/wave3_augmentation/v1/
 NOISE_S43/checkpoint-150
 
@@ -785,7 +785,7 @@ selected decoder: D0_CURRENT
 ### 9.2 Top 2：FULL_LR1E6_S43
 
 ```text
-/home/bolin/cantonese-asr/
+/path/to/cantonese-asr/
 outputs/raw-winner-p1-v1/wave2_recenter/v1/
 FULL_LR1E6_S43/checkpoint-125
 
